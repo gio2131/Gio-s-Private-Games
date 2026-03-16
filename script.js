@@ -20,6 +20,7 @@ let chatUsername = localStorage.getItem('chatUsername') || '';
 let socket = null;
 let messages = [];
 let userCount = 0;
+let connectionStatus = 'disconnected'; // 'disconnected', 'connecting', 'connected'
 
 const mainContent = document.getElementById('main-content');
 const searchInput = document.getElementById('search-input');
@@ -165,9 +166,10 @@ function renderChat() {
                         </div>
                         <button 
                             onclick="joinChat()"
-                            class="w-full bg-emerald-500 hover:bg-emerald-600 text-black font-bold py-3 rounded-xl transition-all shadow-lg shadow-emerald-500/20"
+                            id="join-btn"
+                            class="w-full bg-emerald-500 hover:bg-emerald-600 text-black font-bold py-3 rounded-xl transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            Join Chat
+                            ${connectionStatus === 'connecting' ? 'Connecting...' : 'Join Chat'}
                         </button>
                     </div>
                 </div>
@@ -180,7 +182,10 @@ function renderChat() {
         <div class="max-w-4xl mx-auto h-[70vh] flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div class="flex items-center justify-between">
                 <div>
-                    <h2 class="text-2xl font-bold">Live Chat</h2>
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-2xl font-bold">Live Chat</h2>
+                        <div class="w-2 h-2 rounded-full ${connectionStatus === 'connected' ? 'bg-emerald-500' : 'bg-red-500'}"></div>
+                    </div>
                     <p class="text-zinc-500 text-sm">${userCount} users online</p>
                 </div>
                 <button 
@@ -215,11 +220,13 @@ function renderChat() {
                             type="text" 
                             id="chat-input"
                             class="flex-1 bg-white/5 border border-white/10 rounded-xl py-2 px-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
-                            placeholder="Type a message..."
+                            placeholder="${connectionStatus === 'connected' ? 'Type a message...' : 'Connecting to server...'}"
+                            ${connectionStatus !== 'connected' ? 'disabled' : ''}
                         />
                         <button 
                             onclick="sendChatMessage()"
-                            class="bg-emerald-500 hover:bg-emerald-600 text-black p-2 rounded-xl transition-all"
+                            class="bg-emerald-500 hover:bg-emerald-600 text-black p-2 rounded-xl transition-all disabled:opacity-50"
+                            ${connectionStatus !== 'connected' ? 'disabled' : ''}
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"></path><path d="M22 2 11 13"></path></svg>
                         </button>
@@ -242,49 +249,75 @@ function renderChat() {
 }
 
 function initSocket() {
-    if (socket) return;
+    if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) return;
+
+    connectionStatus = 'connecting';
+    if (currentView === 'chat') renderChat();
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    socket = new WebSocket(`${protocol}//${window.location.host}`);
+    const host = window.location.host;
+    
+    try {
+        socket = new WebSocket(`${protocol}//${host}`);
 
-    socket.onopen = () => {
-        if (chatUsername) {
-            socket.send(JSON.stringify({ type: 'join', username: chatUsername }));
-        }
-    };
-
-    socket.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        
-        if (data.type === 'join_success') {
-            chatUsername = data.username;
-            localStorage.setItem('chatUsername', chatUsername);
-            render();
-        } else if (data.type === 'error') {
-            const errorEl = document.getElementById('username-error');
-            if (errorEl) {
-                errorEl.textContent = data.message;
-                errorEl.classList.remove('hidden');
+        socket.onopen = () => {
+            connectionStatus = 'connected';
+            console.log('WebSocket connected');
+            if (chatUsername) {
+                socket.send(JSON.stringify({ type: 'join', username: chatUsername }));
             }
-            chatUsername = '';
-            localStorage.removeItem('chatUsername');
-        } else if (data.type === 'message' || data.type === 'system') {
-            messages.push(data);
-            if (messages.length > 100) messages.shift();
             if (currentView === 'chat') renderChat();
-        } else if (data.type === 'user_count') {
-            userCount = data.count;
-            if (currentView === 'chat') renderChat();
-        }
-    };
+        };
 
-    socket.onclose = () => {
-        socket = null;
-        // Reconnect after a delay if still in chat view
-        if (currentView === 'chat') {
-            setTimeout(initSocket, 3000);
-        }
-    };
+        socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            
+            if (data.type === 'join_success') {
+                chatUsername = data.username;
+                localStorage.setItem('chatUsername', chatUsername);
+                render();
+            } else if (data.type === 'error') {
+                const errorEl = document.getElementById('username-error');
+                if (errorEl) {
+                    errorEl.textContent = data.message;
+                    errorEl.classList.remove('hidden');
+                }
+                // If we were already in, but got an error (e.g. kicked or session issue)
+                if (chatUsername) {
+                    chatUsername = '';
+                    localStorage.removeItem('chatUsername');
+                    render();
+                }
+            } else if (data.type === 'message' || data.type === 'system') {
+                messages.push(data);
+                if (messages.length > 100) messages.shift();
+                if (currentView === 'chat') renderChat();
+            } else if (data.type === 'user_count') {
+                userCount = data.count;
+                if (currentView === 'chat') renderChat();
+            }
+        };
+
+        socket.onclose = () => {
+            console.log('WebSocket closed');
+            socket = null;
+            connectionStatus = 'disconnected';
+            if (currentView === 'chat') {
+                renderChat();
+                // Auto-reconnect
+                setTimeout(initSocket, 3000);
+            }
+        };
+
+        socket.onerror = (err) => {
+            console.error('WebSocket error:', err);
+            connectionStatus = 'disconnected';
+            if (currentView === 'chat') renderChat();
+        };
+    } catch (e) {
+        console.error('Failed to create WebSocket:', e);
+        connectionStatus = 'disconnected';
+    }
 }
 
 window.joinChat = () => {
@@ -292,13 +325,24 @@ window.joinChat = () => {
     const username = input.value.trim();
     if (!username) return;
 
+    const errorEl = document.getElementById('username-error');
+    if (errorEl) errorEl.classList.add('hidden');
+
     if (!socket || socket.readyState !== WebSocket.OPEN) {
         initSocket();
         // Wait for connection to send join
+        let attempts = 0;
         const checkInterval = setInterval(() => {
+            attempts++;
             if (socket && socket.readyState === WebSocket.OPEN) {
                 socket.send(JSON.stringify({ type: 'join', username }));
                 clearInterval(checkInterval);
+            } else if (attempts > 50 || connectionStatus === 'disconnected') {
+                clearInterval(checkInterval);
+                if (errorEl) {
+                    errorEl.textContent = "Connection failed. Please try again.";
+                    errorEl.classList.remove('hidden');
+                }
             }
         }, 100);
     } else {
