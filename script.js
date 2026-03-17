@@ -102,6 +102,30 @@ const games = [
         "title": "Ragdoll Hit",
         "thumbnail": "https://rawcdn.githack.com/genizy/google-class/main/ragdoll-hit/thumbnail.png",
         "iframeUrl": "ragdoll-hit.html"
+    },
+    {
+        "id": "bow-masters",
+        "title": "Bow Masters",
+        "thumbnail": "https://play-lh.googleusercontent.com/rsQyCuie6S8Munc2Hv6IMpePP1g3c0okLkyKRXd1IimOryIBMZqymGKaOg7bZ6NMkhj3",
+        "iframeUrl": "bow-masters.html"
+    },
+    {
+        "id": "moto-x3m",
+        "title": "Moto X3M",
+        "thumbnail": "https://m.media-amazon.com/images/I/81OM9jKlJfL.png",
+        "iframeUrl": "moto-x3m.html"
+    },
+    {
+        "id": "melon-playground",
+        "title": "Melon Playground",
+        "thumbnail": "https://i.pinimg.com/736x/bd/e7/f5/bde7f58165f0359b49ba628f16727db5.jpg",
+        "iframeUrl": "melon-playground.html"
+    },
+    {
+        "id": "fnaf-world",
+        "title": "Fnaf World",
+        "thumbnail": "https://imag.malavida.com/mvimgbig/download-fs/fnaf-world-27444-3.jpg",
+        "iframeUrl": "fnaf-world.html"
     }
 ];
 
@@ -117,6 +141,20 @@ let unsubscribeAnnouncements = null;
 let heartbeatInterval = null;
 let lastMessageSentAt = 0;
 let isTrusted = false;
+let currentCatImage = '';
+let currentVideoId = '';
+const CAT_IMAGES = [
+    'https://i.pinimg.com/736x/e9/7c/fe/e97cfea50835dc14689ba16f10a47216.jpg',
+    'https://i.pinimg.com/736x/6f/44/60/6f446080c188b1eaaeb22264d9d250cd.jpg',
+    'https://i.pinimg.com/736x/49/62/b0/4962b01ecb81613e7197f83342ea5ede.jpg',
+    'https://i.pinimg.com/736x/82/76/de/8276def31054c455dad15a84619df78b.jpg',
+    'https://i.pinimg.com/736x/ca/91/67/ca9167da99ae2709a40fb261229d0256.jpg',
+    'https://i.pinimg.com/736x/38/b7/d1/38b7d17290eae7f95b332d454ae86272.jpg',
+    'https://i.pinimg.com/1200x/e5/9e/6e/e59e6e13619242230110d1920878ae55.jpg',
+    'https://i.pinimg.com/736x/ad/95/93/ad9593d4e16ce6b64b6a2fd08aff1441.jpg',
+    'https://i.pinimg.com/736x/c7/ab/d0/c7abd0abeaa1fbe932a9225ca90140fe.jpg',
+    'https://i.pinimg.com/736x/1a/6e/d5/1a6ed57b5d233d2edda76348e254da7b.jpg'
+];
 const SLOW_MODE_MS = 2000;
 const TRUSTED_CODE = "00999";
 
@@ -125,11 +163,17 @@ const searchInput = document.getElementById('search-input');
 const logo = document.getElementById('logo');
 const navGames = document.getElementById('nav-games');
 const navChat = document.getElementById('nav-chat');
+const navOthers = document.getElementById('nav-others');
+const navVideo = document.getElementById('nav-video');
 const navTrusted = document.getElementById('nav-trusted');
 
 function render() {
     if (currentView === 'chat') {
         renderChat();
+    } else if (currentView === 'others') {
+        renderOthers();
+    } else if (currentView === 'video') {
+        renderVideoPlayer();
     } else if (currentView === 'trusted') {
         renderTrusted();
     } else if (selectedGame) {
@@ -159,6 +203,155 @@ window.selectTrustedGame = (id) => {
     currentView = 'trusted'; // Keep the header state
     render();
     window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+function renderOthers() {
+    mainContent.innerHTML = `
+        <div class="max-w-2xl mx-auto py-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div class="bg-zinc-900/50 border border-white/10 rounded-3xl p-8 backdrop-blur-xl text-center">
+                <div class="w-16 h-16 bg-emerald-500/20 rounded-2xl flex items-center justify-center text-emerald-500 mx-auto mb-6">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5c.67 0 1.35.09 2 .26 1.78-2 5.03-2.84 6.42-2.26 1.4.58-.42 7-.42 7 .57 1.27 1.73 4.42 0 6.42-1.73 2-5 1.71-5 1.71s-3.33.29-5-1.71c-1.73-2-.57-5.15 0-6.42 0 0-1.82-6.42-.42-7 1.39-.58 4.64.26 6.42 2.26.65-.17 1.33-.26 2-.26Z"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><circle cx="9" cy="11" r="1"/><circle cx="15" cy="11" r="1"/></svg>
+                </div>
+                <h2 class="text-3xl font-bold mb-4">Cat Generator</h2>
+                <p class="text-zinc-500 mb-8">Click the button below to see a random cute cat!</p>
+                
+                <div class="mb-8 min-h-[300px] flex items-center justify-center">
+                    ${currentCatImage ? `
+                        <div class="relative group">
+                            <img 
+                                src="${currentCatImage}" 
+                                alt="Random Cat" 
+                                class="max-w-full h-auto rounded-2xl shadow-2xl border border-white/10 animate-in zoom-in-95 duration-300"
+                                referrerpolicy="no-referrer"
+                            />
+                        </div>
+                    ` : `
+                        <div class="w-full h-64 bg-white/5 rounded-2xl border border-dashed border-white/10 flex items-center justify-center text-zinc-600">
+                            No cat generated yet
+                        </div>
+                    `}
+                </div>
+
+                <button 
+                    onclick="window.generateRandomCat()"
+                    class="bg-emerald-500 hover:bg-emerald-600 text-black font-bold py-4 px-8 rounded-2xl transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2 mx-auto active:scale-95"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+                    Generate Random Cat
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+window.generateRandomCat = () => {
+    const randomIndex = Math.floor(Math.random() * CAT_IMAGES.length);
+    currentCatImage = CAT_IMAGES[randomIndex];
+    render();
+};
+
+function renderVideoPlayer() {
+    mainContent.innerHTML = `
+        <div class="max-w-4xl mx-auto py-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div class="bg-zinc-900/50 border border-white/10 rounded-3xl p-8 backdrop-blur-xl">
+                <div class="flex items-center gap-4 mb-8">
+                    <div class="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center text-red-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold">Video Player</h2>
+                        <p class="text-zinc-500 text-sm">Paste a YouTube URL or Video ID to watch</p>
+                    </div>
+                </div>
+
+                <div class="flex gap-2 mb-8">
+                    <div class="flex-1 relative">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+                        <input 
+                            type="text" 
+                            id="youtube-url-input"
+                            placeholder="https://www.youtube.com/watch?v=..."
+                            class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-red-500/50 transition-all placeholder:text-zinc-600"
+                        />
+                    </div>
+                    <button 
+                        onclick="window.loadVideo()"
+                        class="bg-red-500 hover:bg-red-600 text-white font-bold px-8 rounded-2xl transition-all shadow-lg shadow-red-500/20 active:scale-95"
+                    >
+                        Load
+                    </button>
+                </div>
+
+                <div class="aspect-video bg-black rounded-2xl overflow-hidden border border-white/5 shadow-2xl mb-8">
+                    ${currentVideoId ? `
+                        <iframe 
+                            width="100%" 
+                            height="100%" 
+                            src="https://www.youtube.com/embed/${currentVideoId}" 
+                            title="YouTube video player" 
+                            frameborder="0" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                            allowfullscreen
+                        ></iframe>
+                    ` : `
+                        <div class="w-full h-full flex flex-col items-center justify-center text-zinc-700 gap-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-20"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><path d="m9 8 6 4-6 4Z"/></svg>
+                            <p class="font-medium">No video loaded</p>
+                        </div>
+                    `}
+                </div>
+
+                <div class="bg-white/5 rounded-2xl p-6 border border-white/5">
+                    <h3 class="text-lg font-bold mb-2 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-500"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                        How To get links
+                    </h3>
+                    <p class="text-zinc-400 text-sm leading-relaxed">
+                        Search on bing/google for a video you'd like 2 watch and click it then copy the url (make sure its youtube)
+                    </p>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Add enter key listener to input
+    const input = document.getElementById('youtube-url-input');
+    if (input) {
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') window.loadVideo();
+        });
+        if (currentVideoId) {
+            // If we have a video ID, we might want to show the URL in the input
+            // But for now let's keep it simple
+        }
+    }
+}
+
+window.loadVideo = () => {
+    const input = document.getElementById('youtube-url-input');
+    const val = input.value.trim();
+    if (!val) return;
+
+    let videoId = '';
+    
+    // Extract ID from various YouTube URL formats
+    if (val.includes('youtube.com/watch?v=')) {
+        videoId = val.split('v=')[1].split('&')[0];
+    } else if (val.includes('youtu.be/')) {
+        videoId = val.split('youtu.be/')[1].split('?')[0];
+    } else if (val.includes('youtube.com/embed/')) {
+        videoId = val.split('embed/')[1].split('?')[0];
+    } else {
+        // Assume it's a direct ID
+        videoId = val;
+    }
+
+    if (videoId) {
+        currentVideoId = videoId;
+        render();
+    } else {
+        alert('Invalid YouTube URL or Video ID');
+    }
 };
 
 function renderTrusted() {
@@ -259,6 +452,27 @@ function renderTrusted() {
                             </h4>
                         </div>
                     `).join('')}
+                </div>
+            </div>
+
+            <div class="bg-zinc-900/50 border border-white/10 rounded-3xl p-8 backdrop-blur-xl">
+                <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-500"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"></path></svg>
+                    Admin Codes
+                </h3>
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-emerald-500/10 rounded-lg flex items-center justify-center text-emerald-500">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                            </div>
+                            <div>
+                                <p class="font-medium text-white">Clear Chat Code</p>
+                                <p class="text-xs text-zinc-500">Used to wipe all messages from the global chat.</p>
+                            </div>
+                        </div>
+                        <code class="bg-emerald-500/10 text-emerald-500 px-4 py-2 rounded-lg font-mono font-bold text-lg border border-emerald-500/20">15867</code>
+                    </div>
                 </div>
             </div>
         </div>
@@ -916,6 +1130,16 @@ navGames.addEventListener('click', () => {
 navChat.addEventListener('click', () => {
     currentView = 'chat';
     if (chatUsername) initFirebaseChat();
+    render();
+});
+
+navOthers.addEventListener('click', () => {
+    currentView = 'others';
+    render();
+});
+
+navVideo.addEventListener('click', () => {
+    currentView = 'video';
     render();
 });
 
