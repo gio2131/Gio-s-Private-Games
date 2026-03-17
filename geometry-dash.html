@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <base href="https://rawcdn.githack.com/genizy/google-class/main/gdlite/">
+    <title>Geometry Dash</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { margin: 0; background: black; overflow: hidden; height: 100vh; display: flex; align-items: center; justify-content: center; }
+        #gameContainer { width: 100%; height: 100%; }
+        #loader { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(black, #0066ff); z-index: 10; }
+        .logo { max-width: 80%; margin-bottom: 20px; }
+        .progress { width: 80%; max-width: 400px; height: 10px; background: #444; border-radius: 5px; overflow: hidden; }
+        .full { height: 100%; background: #fff; width: 0%; transition: width 0.2s; }
+    </style>
+</head>
+<body>
+    <div id="gameContainer"></div>
+    <div id="loader">
+        <img class="logo" src="image/loading.png?v=1">
+        <div class="progress"><div class="full"></div></div>
+    </div>
+    <script src="Build/UnityLoader.js"></script>
+    <script>
+        var gameInstance = UnityLoader.instantiate("gameContainer", "Build/GeometryDashLite.json", {
+            onProgress: function(instance, progress) {
+                const bar = document.querySelector(".full");
+                if (bar) bar.style.width = (progress * 100) + "%";
+                if (progress === 1) {
+                    setTimeout(() => document.getElementById("loader").style.display = "none", 1000);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -38,6 +38,60 @@ fetch('./firebase-applet-config.json')
 
 const games = [
     {
+        "id": "pvz",
+        "title": "Plants Vs Zombies",
+        "thumbnail": "https://vignette.wikia.nocookie.net/logopedia/images/0/01/Pvz_logo_stacked_rgb.png/revision/latest?cb=20120408101754",
+        "iframeUrl": "pvz.html"
+    },
+    {
+        "id": "minecraft",
+        "title": "Minecraft",
+        "thumbnail": "https://logos-world.net/wp-content/uploads/2020/04/Minecraft-Emblem.jpg",
+        "iframeUrl": "minecraft.html"
+    },
+    {
+        "id": "retrobowl",
+        "title": "Retro Bowl",
+        "thumbnail": "https://i.ibb.co/ZX99dDz/retro-bowl-unblocked.jpg",
+        "iframeUrl": "https://game316009.konggames.com/gamez/0031/6009/live/index.html"
+    },
+    {
+        "id": "8ball",
+        "title": "8 Ball Billiards",
+        "thumbnail": "https://img-cdn.heygame.io/gameimages/b16adad8-cff5-4274-84a3-3bc8e1a6205c-8%20Ball%20Pool%20Online.webp",
+        "iframeUrl": "8ball.html"
+    },
+    {
+        "id": "bloons-td",
+        "title": "Bloons TD",
+        "thumbnail": "https://assets.nintendo.com/image/upload/c_fill,w_1200/q_auto:best/f_auto/dpr_2.0/ncom/en_US/games/switch/b/bloons-td-5-switch/hero",
+        "iframeUrl": "bloons-td.html"
+    },
+    {
+        "id": "blackjack",
+        "title": "BlackJack",
+        "thumbnail": "https://www.888casino.com/blog/sites/newblog.888casino.com/files/inline-images/blackjack_1.jpg",
+        "iframeUrl": "blackjack-game.html"
+    },
+    {
+        "id": "dogeminer",
+        "title": "Doge Miner",
+        "thumbnail": "https://images.crazygames.com/games/doge-miner/cover-1593443166599.png?auto=format,compress&q=75&cs=strip&ch=DPR&w=1200&h=630&fit=crop",
+        "iframeUrl": "dogeminer.html"
+    },
+    {
+        "id": "fnaf-ucn",
+        "title": "FNAF UCN",
+        "thumbnail": "https://play-lh.googleusercontent.com/pB7dsLLcRgADtFpEPeKc5mSyAn1E1JzrdQ1V7-Y5hizgub3G8e9UJIc5opC9mYXKSBw",
+        "iframeUrl": "fnaf-ucn.html"
+    },
+    {
+        "id": "geometry-dash",
+        "title": "Geometry Dash",
+        "thumbnail": "https://is1-ssl.mzstatic.com/image/thumb/Purple112/v4/2a/6f/ea/2a6feaae-3202-5356-eb1b-409208bcb0af/AppIcon-0-0-1x_U007emarketing-0-0-0-10-0-0-sRGB-0-0-0-GLES2_U002c0-512MB-85-220-0-0.png/1200x630wa.png",
+        "iframeUrl": "geometry-dash.html"
+    },
+    {
         "id": "crazy-cattle-3d",
         "title": "Crazy Cattle 3D",
         "thumbnail": "https://rawcdn.githack.com/genizy/cc3d-mobile/main/CrazyCattle3D.png",
@@ -59,6 +113,7 @@ let messages = [];
 let userCount = 0;
 let unsubscribeMessages = null;
 let unsubscribeUsers = null;
+let unsubscribeAnnouncements = null;
 let heartbeatInterval = null;
 let lastMessageSentAt = 0;
 let isTrusted = false;
@@ -83,6 +138,28 @@ function render() {
         renderGrid();
     }
 }
+
+const TRUSTED_GAMES = [
+    {
+        "id": "hotline-miami",
+        "title": "Hotline Miami",
+        "thumbnail": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/31184640-b024-47d1-b392-50174b836348/dfl2mir-25d215ac-7297-4ce0-a09e-2ba261ef9462.png/v1/fill/w_512,h_512/hotline_miami_icon_by_keke4050_dfl2mir-fullview.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9NTEyIiwicGF0aCI6IlwvZlwvMzExODQ2NDAtYjAyNC00N2QxLWIzOTItNTAxNzRiODM2MzQ4XC9kZmwybWlyLTI1ZDIxNWFjLTcyOTctNGNlMC1hMDllLTJiYTI2MWVmOTQ2Mi5wbmciLCJ3aWR0aCI6Ijw9NTEyIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmltYWdlLm9wZXJhdGlvbnMiXX0.tnba7n1PbhiiDb86u-VSiFcHpG2moicpYc3aMfTCtBA",
+        "iframeUrl": "hotline-miami.html"
+    },
+    {
+        "id": "sonic-exe",
+        "title": "Sonic.EXE",
+        "thumbnail": "https://cdn2.steamgriddb.com/file/sgdb-cdn/logo_thumb/31c660c9bfd19dc8145532f33b9dc187.png",
+        "iframeUrl": "sonic-exe.html"
+    }
+];
+
+window.selectTrustedGame = (id) => {
+    selectedGame = TRUSTED_GAMES.find(g => g.id === id);
+    currentView = 'trusted'; // Keep the header state
+    render();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
 
 function renderTrusted() {
     if (!isTrusted) {
@@ -115,8 +192,13 @@ function renderTrusted() {
         return;
     }
 
+    if (selectedGame) {
+        renderPlayer();
+        return;
+    }
+
     mainContent.innerHTML = `
-        <div class="max-w-2xl mx-auto py-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div class="max-w-4xl mx-auto py-12 animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
             <div class="bg-zinc-900/50 border border-white/10 rounded-3xl p-8 backdrop-blur-xl">
                 <div class="flex items-center gap-3 mb-6">
                     <div class="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center text-emerald-500">
@@ -150,6 +232,33 @@ function renderTrusted() {
                             </button>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <div class="bg-zinc-900/50 border border-white/10 rounded-3xl p-8 backdrop-blur-xl">
+                <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-500"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                    Secret Games
+                </h3>
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                    ${TRUSTED_GAMES.map(game => `
+                        <div 
+                            onclick="window.selectTrustedGame('${game.id}')"
+                            class="group cursor-pointer"
+                        >
+                            <div class="aspect-[4/3] rounded-2xl overflow-hidden bg-zinc-800 border border-white/5 group-hover:border-emerald-500/50 transition-all shadow-lg">
+                                <img 
+                                    src="${game.thumbnail}" 
+                                    alt="${game.title}"
+                                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                    referrerpolicy="no-referrer"
+                                />
+                            </div>
+                            <h4 class="mt-2 text-sm font-medium text-zinc-300 group-hover:text-emerald-400 transition-colors truncate">
+                                ${game.title}
+                            </h4>
+                        </div>
+                    `).join('')}
                 </div>
             </div>
         </div>
@@ -412,22 +521,27 @@ const OperationType = {
     WRITE: 'write',
 };
 
+let lastAnnouncementId = null;
 function initAnnouncements() {
-    if (!db) return;
+    if (!db || unsubscribeAnnouncements) return;
     
     // Listen for new announcements
     const q = query(collection(db, 'announcements'), orderBy('timestamp', 'desc'), limit(1));
-    onSnapshot(q, (snapshot) => {
-        snapshot.docChanges().forEach((change) => {
-            if (change.type === "added") {
-                const data = change.doc.data();
-                // Only show if it's recent (within last 10 seconds to avoid showing old ones on load)
-                const ts = data.timestamp?.toMillis() || 0;
-                if (Date.now() - ts < 10000) {
-                    showAnnouncement(data.text);
-                }
-            }
-        });
+    unsubscribeAnnouncements = onSnapshot(q, (snapshot) => {
+        if (snapshot.empty) return;
+        const doc = snapshot.docs[0];
+        const data = doc.data();
+        
+        // Skip the first one on load to avoid showing old announcements
+        if (lastAnnouncementId === null) {
+            lastAnnouncementId = doc.id;
+            return;
+        }
+        
+        if (doc.id !== lastAnnouncementId) {
+            lastAnnouncementId = doc.id;
+            showAnnouncement(data.text);
+        }
     });
 }
 
@@ -450,11 +564,13 @@ function showAnnouncement(text) {
     }, 5000);
 }
 
+let isSendingAnnounce = false;
 window.sendAnnouncement = async () => {
     const input = document.getElementById('announce-input');
     const text = input.value.trim();
-    if (!text || !db) return;
+    if (!text || !db || isSendingAnnounce) return;
 
+    isSendingAnnounce = true;
     try {
         await addDoc(collection(db, 'announcements'), {
             text: text,
@@ -465,6 +581,8 @@ window.sendAnnouncement = async () => {
     } catch (e) {
         console.error("Announce error:", e);
         alert("Failed to send announcement: " + e.message);
+    } finally {
+        isSendingAnnounce = false;
     }
 };
 

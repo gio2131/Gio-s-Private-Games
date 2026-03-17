@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <base href="https://cdn.jsdelivr.net/gh/genizy/web-port@latest/sonic.exe/">
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="viewport-fit=cover, width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0" />
+    <title>Sonic.EXE</title>
+    <style>
+      html { background: #060612; }
+      body {
+        font-family: arial;
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        min-width: 100vw;
+        background: radial-gradient(56.63% 56.63% at 50% 43.37%, #1c1726 0%, #060612 100%);
+        display: flex;
+        flex-direction: column;
+        overflow-x: hidden;
+        place-items: center;
+      }
+      canvas.emscripten {
+        display: none;
+        border: 0px none;
+        background-color: black;
+        position: relative;
+        transition: opacity 5s ease-in;
+        opacity: 0;
+        margin-top: auto;
+        margin-bottom: auto;
+      }
+      canvas.active { opacity: 1; display: block; }
+      .loading {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="loading-text" style="color: white; font-size: 48px; font-family: cursive; text-align: center; margin-top: 20px;">LOADING...</div>
+    <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
+    <script>
+      (async () => {
+        const loadingText = document.querySelector("#loading-text");
+        async function fetchWithProgress(url) {
+          const response = await fetch(url);
+          const reader = response.body.getReader();
+          let chunks = [];
+          let received = 0;
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            received += value.length;
+            chunks.push(value);
+            loadingText.textContent = `LOADING... ${(received / 1024 / 1024).toFixed(1)} MB`;
+          }
+          let fullBuffer = new Uint8Array(received);
+          let offset = 0;
+          for (let chunk of chunks) {
+            fullBuffer.set(chunk, offset);
+            offset += chunk.length;
+          }
+          return fullBuffer.buffer;
+        }
+        async function mergeFiles(parts) {
+          const buffers = await Promise.all(parts.map(fetchWithProgress));
+          return URL.createObjectURL(new Blob(buffers));
+        }
+        const gameurl = await mergeFiles(["game.unx.part1", "game.unx.part2"]);
+        window.gameUnxUrl = gameurl;
+        const originalFetch = window.fetch;
+        window.fetch = async function (...args) {
+            let [url, options] = args;
+            if (typeof url === 'string' && url.includes("game.unx")) url = window.gameUnxUrl;
+            return originalFetch.call(this, url, options);
+        };
+        loadingText.remove();
+        const s1 = document.createElement("script"); s1.src = "index.js"; document.body.appendChild(s1);
+        const s2 = document.createElement("script"); s2.src = "runner.js"; s2.async = true; document.body.appendChild(s2);
+      })();
+    </script>
+  </body>
+</html>

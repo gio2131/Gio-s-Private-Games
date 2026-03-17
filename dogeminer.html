@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+	<title>Dogeminer</title>
+	<meta name="description" content="How to mine dogecoins? Find out in Dogeminer: The Dogecoin Mining Simulator. Very wow. To the moon!" />
+	<meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui, shrink-to-fit=no, height=device-height" />
+	<link rel="icon" href="https://cdn.jsdelivr.net/gh/Nailington/3kh0-assets@aeb371b7e88542fd5e61eeed9e967a446d84fe1b/DogeMiner/favicon.ico" type="image/x-icon" />
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Nailington/3kh0-assets@aeb371b7e88542fd5e61eeed9e967a446d84fe1b/DogeMiner/css/main-v1-0-2-bs.css" />
+	<link id="stylesheet" href="https://cdn.jsdelivr.net/gh/Nailington/3kh0-assets@aeb371b7e88542fd5e61eeed9e967a446d84fe1b/DogeMiner/css/sunny/jquery-ui-1.10.4.custom.min.css" rel="stylesheet" />
+    <style>
+        body { background-color: #222222; margin: 0; padding: 0; overflow: hidden; }
+        #supermegacontainer { transform: scale(0.9); transform-origin: top center; }
+    </style>
+</head>
+<body>
+	<div id="BG" class="gpurender animated fadeIn duration-30"></div>
+	<div id="supermegacontainer">
+		<div id="superwrapper">
+			<div id="wrapper" class="ui-widget ui-widget-content ui-corner-all tenpadding noselect">
+				<header>
+					<h1 id="titleheader" align="center">
+						<img alt="Dogecoin" src="https://cdn.jsdelivr.net/gh/Nailington/3kh0-assets@aeb371b7e88542fd5e61eeed9e967a446d84fe1b/DogeMiner/img/dogecoin-d.png" style="height: 70px; width: 70px;" />
+                            DOGEMINER
+                    </h1>
+                    <div id="level-status" style="position: absolute; top: 0px; left: 5px; opacity: 0.6; z-index: 2; font-size: 90%;">
+                        <small>LOCATION:</small><br /><span id="location"><font style="color: #a48032;">EARTH</font></span><br />
+                        <small>TARGET:</small><br /><span id="nextlocation"><font style="color: #b2b2b2;">MOON</font></span><br />
+                        <small>LAUNCH STATUS:</small><br /><span id="progress">0%</span>
+                    </div>
+				</header>
+				<div class="coinstext">
+					<div id="mined"><p>Dogecoins: <strong>0</strong></p></div>
+					<div id="persec"><p>Per sec: <span class="mined-persec">0</span></p></div>
+				</div>
+				<div id="minerwrapper">
+					<div id="miner" class="level1 level1-doge_mine1u0 noselect"></div>
+				</div>
+			</div>
+			<div id="tabs" class="noselect ui-tabs ui-widget ui-widget-content ui-corner-all">
+				<ul>
+					<li><a href="#tabs-1">Store</a></li>
+					<li><a href="#tabs-2">Upgrades</a></li>
+				</ul>
+				<div id="tabs-1">
+					<div class="help">
+						<div id="help1" class="helps">
+							<div id="shibesimage" class="level1 level1-shibe0" style="position: absolute; left: 210px;"></div>
+							<strong><h3 id="shibesname" class="inlineheader">Mining Shibe</h3><span id="shibecost"></span></strong><br />
+							<button id="buyshibe" class="shopbutton">Buy!</button>
+						</div>
+					</div>
+				</div>
+				<div id="tabs-2"><div id="upgradewrapper"></div></div>
+			</div>
+		</div>
+	</div>
+	<script src="https://cdn.jsdelivr.net/gh/Nailington/3kh0-assets@aeb371b7e88542fd5e61eeed9e967a446d84fe1b/DogeMiner/js/plugins.js"></script>
+	<script src="https://cdn.jsdelivr.net/gh/Nailington/3kh0-assets@aeb371b7e88542fd5e61eeed9e967a446d84fe1b/DogeMiner/js/main.js"></script>
+</body>
+</html>
