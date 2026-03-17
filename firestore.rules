@@ -49,5 +49,10 @@ service cloud.firestore {
       allow update: if isValidUser(request.resource.data) && resource.data.username == username;
       allow delete: if resource.data.username == username;
     }
+
+    // Announcements collection
+    match /announcements/{announcementId} {
+      allow read, write: if true;
+    }
   }
 }

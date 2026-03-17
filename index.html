@@ -40,6 +40,7 @@
                 <div class="hidden sm:flex items-center gap-6 text-sm font-medium text-zinc-400">
                     <button class="hover:text-white transition-colors" id="nav-games">Games</button>
                     <button class="hover:text-white transition-colors" id="nav-chat">Live Chat</button>
+                    <button class="hover:text-white transition-colors" id="nav-trusted">Trusted Access</button>
                 </div>
             </div>
         </header>
@@ -48,22 +49,10 @@
             <!-- Content injected by JS -->
         </main>
 
-        <!-- Footer -->
-        <footer class="mt-20 border-t border-white/5 py-12 bg-black/50">
-            <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-8">
-                <div class="flex items-center gap-2 opacity-50">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" x2="10" y1="12" y2="12"></line><line x1="8" x2="8" y1="10" y2="14"></line><line x1="15" x2="15.01" y1="13" y2="13"></line><line x1="18" x2="18.01" y1="11" y2="11"></line><rect width="20" height="12" x="2" y="6" rx="2"></rect></svg>
-                    <span class="font-bold tracking-tight uppercase">Gio's private games</span>
-                </div>
-                <div class="flex gap-8 text-sm text-zinc-500">
-                    <a href="#" class="hover:text-white transition-colors">Privacy</a>
-                    <a href="#" class="hover:text-white transition-colors">Terms</a>
-                </div>
-                <div class="text-sm text-zinc-600">
-                    © 2026 Gio's private games.
-                </div>
-            </div>
-        </footer>
+        <!-- Global Announcement Popup -->
+        <div id="announcement-container" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+            <!-- Announcements will be injected here -->
+        </div>
     </div>
 
     <script type="module" src="script.js"></script>

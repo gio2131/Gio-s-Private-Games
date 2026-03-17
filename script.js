@@ -61,22 +61,99 @@ let unsubscribeMessages = null;
 let unsubscribeUsers = null;
 let heartbeatInterval = null;
 let lastMessageSentAt = 0;
+let isTrusted = false;
 const SLOW_MODE_MS = 2000;
+const TRUSTED_CODE = "00999";
 
 const mainContent = document.getElementById('main-content');
 const searchInput = document.getElementById('search-input');
 const logo = document.getElementById('logo');
 const navGames = document.getElementById('nav-games');
 const navChat = document.getElementById('nav-chat');
+const navTrusted = document.getElementById('nav-trusted');
 
 function render() {
     if (currentView === 'chat') {
         renderChat();
+    } else if (currentView === 'trusted') {
+        renderTrusted();
     } else if (selectedGame) {
         renderPlayer();
     } else {
         renderGrid();
     }
+}
+
+function renderTrusted() {
+    if (!isTrusted) {
+        mainContent.innerHTML = `
+            <div class="max-w-md mx-auto py-20 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div class="bg-zinc-900/50 border border-white/10 rounded-3xl p-8 backdrop-blur-xl">
+                    <h2 class="text-2xl font-bold mb-2">Trusted Access</h2>
+                    <p class="text-zinc-500 mb-6">Enter the access code to enter the trusted area.</p>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-zinc-400 mb-1">Access Code</label>
+                            <input 
+                                type="password" 
+                                id="trusted-code-input"
+                                class="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
+                                placeholder="•••••"
+                            />
+                        </div>
+                        <button 
+                            onclick="window.joinTrusted()"
+                            class="w-full bg-emerald-500 hover:bg-emerald-600 text-black font-bold py-3 rounded-xl transition-all shadow-lg shadow-emerald-500/20"
+                        >
+                            Verify Access
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    mainContent.innerHTML = `
+        <div class="max-w-2xl mx-auto py-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div class="bg-zinc-900/50 border border-white/10 rounded-3xl p-8 backdrop-blur-xl">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center text-emerald-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"></path></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold">Trusted Dashboard</h2>
+                        <p class="text-zinc-500 text-sm">Welcome to the secure management area.</p>
+                    </div>
+                </div>
+
+                <div class="space-y-8">
+                    <div class="p-6 bg-white/5 rounded-2xl border border-white/5">
+                        <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-500"><path d="m3 21 1.9-1.9"></path><path d="M20.2 20.2 22 22"></path><path d="m20 7 2 2"></path><path d="M2 9.5V11a10 10 0 0 0 16 8l2.5 2.5"></path><path d="M22 5.5V4a10 10 0 0 0-16-8L3.5-1.5"></path><path d="m15 11-4 4"></path><path d="m9 5 2 2"></path></svg>
+                            Global Message Announce
+                        </h3>
+                        <p class="text-zinc-500 text-sm mb-4">Send a message that will appear as a popup for every active user on the site for 5 seconds.</p>
+                        <div class="flex gap-2">
+                            <input 
+                                type="text" 
+                                id="announce-input"
+                                class="flex-1 bg-black/40 border border-white/10 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
+                                placeholder="Enter announcement message..."
+                            />
+                            <button 
+                                onclick="window.sendAnnouncement()"
+                                class="bg-emerald-500 hover:bg-emerald-600 text-black font-bold px-6 rounded-xl transition-all shadow-lg shadow-emerald-500/20"
+                            >
+                                Send
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
 }
 
 function renderGrid() {
@@ -335,6 +412,72 @@ const OperationType = {
     WRITE: 'write',
 };
 
+function initAnnouncements() {
+    if (!db) return;
+    
+    // Listen for new announcements
+    const q = query(collection(db, 'announcements'), orderBy('timestamp', 'desc'), limit(1));
+    onSnapshot(q, (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+            if (change.type === "added") {
+                const data = change.doc.data();
+                // Only show if it's recent (within last 10 seconds to avoid showing old ones on load)
+                const ts = data.timestamp?.toMillis() || 0;
+                if (Date.now() - ts < 10000) {
+                    showAnnouncement(data.text);
+                }
+            }
+        });
+    });
+}
+
+function showAnnouncement(text) {
+    const container = document.getElementById('announcement-container');
+    if (!container) return;
+
+    const el = document.createElement('div');
+    el.className = 'mb-4 bg-emerald-500 text-black font-bold py-4 px-8 rounded-2xl shadow-2xl shadow-emerald-500/40 animate-in fade-in zoom-in slide-in-from-top-4 duration-300 flex items-center gap-3 border-2 border-white/20 pointer-events-auto';
+    el.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+        <span>${text}</span>
+    `;
+    
+    container.appendChild(el);
+
+    setTimeout(() => {
+        el.classList.add('animate-out', 'fade-out', 'zoom-out', 'slide-out-to-top-4');
+        setTimeout(() => el.remove(), 300);
+    }, 5000);
+}
+
+window.sendAnnouncement = async () => {
+    const input = document.getElementById('announce-input');
+    const text = input.value.trim();
+    if (!text || !db) return;
+
+    try {
+        await addDoc(collection(db, 'announcements'), {
+            text: text,
+            timestamp: serverTimestamp()
+        });
+        input.value = '';
+        alert("Announcement sent!");
+    } catch (e) {
+        console.error("Announce error:", e);
+        alert("Failed to send announcement: " + e.message);
+    }
+};
+
+window.joinTrusted = () => {
+    const input = document.getElementById('trusted-code-input');
+    if (input.value === TRUSTED_CODE) {
+        isTrusted = true;
+        render();
+    } else {
+        alert("Incorrect access code.");
+    }
+};
+
 function handleFirestoreError(error, operationType, path) {
     const errInfo = {
         error: error instanceof Error ? error.message : String(error),
@@ -365,6 +508,8 @@ function initFirebaseChat() {
         setTimeout(initFirebaseChat, 500);
         return;
     }
+
+    initAnnouncements();
 
     if (unsubscribeMessages) unsubscribeMessages();
     if (unsubscribeUsers) unsubscribeUsers();
@@ -653,6 +798,11 @@ navGames.addEventListener('click', () => {
 navChat.addEventListener('click', () => {
     currentView = 'chat';
     if (chatUsername) initFirebaseChat();
+    render();
+});
+
+navTrusted.addEventListener('click', () => {
+    currentView = 'trusted';
     render();
 });
 
