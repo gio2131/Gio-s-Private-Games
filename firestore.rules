@@ -39,11 +39,7 @@ service cloud.firestore {
 
     // Messages collection
     match /messages/{messageId} {
-      // Allow public read for the chat prototype
-      allow read: if true; 
-      // Allow creation if data is valid (loosened auth check for prototype)
-      allow create: if isValidMessage(request.resource.data);
-      allow update, delete: if false;
+      allow read, write: if true;
     }
 
     // Active users collection

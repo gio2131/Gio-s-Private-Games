@@ -11,7 +11,9 @@ import {
     serverTimestamp, 
     doc, 
     setDoc, 
+    updateDoc,
     getDoc,
+    getDocs,
     deleteDoc
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
@@ -58,6 +60,8 @@ let userCount = 0;
 let unsubscribeMessages = null;
 let unsubscribeUsers = null;
 let heartbeatInterval = null;
+let lastMessageSentAt = 0;
+const SLOW_MODE_MS = 2000;
 
 const mainContent = document.getElementById('main-content');
 const searchInput = document.getElementById('search-input');
@@ -225,12 +229,20 @@ function renderChat() {
                     </div>
                     <p class="text-zinc-500 text-sm">${userCount} users online</p>
                 </div>
-                <button 
-                    onclick="window.leaveChat()"
-                    class="text-sm text-zinc-500 hover:text-red-400 transition-colors"
-                >
-                    Leave Chat
-                </button>
+                <div class="flex items-center gap-4">
+                    <button 
+                        onclick="window.promptClearChat()"
+                        class="text-xs bg-white/5 hover:bg-red-500/20 text-zinc-500 hover:text-red-400 px-3 py-1 rounded-lg transition-all border border-white/5"
+                    >
+                        Clear Chat
+                    </button>
+                    <button 
+                        onclick="window.leaveChat()"
+                        class="text-sm text-zinc-500 hover:text-red-400 transition-colors"
+                    >
+                        Leave Chat
+                    </button>
+                </div>
             </div>
 
             <div class="flex-1 bg-zinc-900/50 border border-white/10 rounded-3xl overflow-hidden flex flex-col backdrop-blur-xl">
@@ -241,10 +253,28 @@ function renderChat() {
                         }
                         const isMe = msg.username === chatUsername;
                         return `
-                            <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
-                                <span class="text-[10px] text-zinc-500 mb-1 px-2">${msg.username}</span>
-                                <div class="max-w-[80%] px-4 py-2 rounded-2xl text-sm ${isMe ? 'bg-emerald-500 text-black rounded-tr-none' : 'bg-white/10 text-white rounded-tl-none'}">
-                                    ${msg.text}
+                            <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} group">
+                                <div class="flex items-center gap-2 mb-1 px-2">
+                                    <span class="text-[10px] text-zinc-500">${msg.username}</span>
+                                    ${msg.isEdited ? '<span class="text-[8px] text-zinc-600 italic">(edited)</span>' : ''}
+                                </div>
+                                <div class="relative max-w-[80%] flex flex-col gap-2">
+                                    <div class="px-4 py-2 rounded-2xl text-sm ${isMe ? 'bg-emerald-500 text-black rounded-tr-none' : 'bg-white/10 text-white rounded-tl-none'}">
+                                        ${msg.imageUrl ? `
+                                            <img src="${msg.imageUrl}" class="w-20 h-20 object-cover rounded-lg mb-2 cursor-pointer hover:opacity-90 transition-opacity" onclick="window.open('${msg.imageUrl}', '_blank')" />
+                                        ` : ''}
+                                        ${msg.text}
+                                    </div>
+                                    ${isMe ? `
+                                        <div class="absolute -left-16 top-0 hidden group-hover:flex items-center gap-1">
+                                            <button onclick="window.editMessagePrompt('${msg.id}')" class="p-1.5 hover:bg-white/10 rounded-lg text-zinc-500 hover:text-emerald-400 transition-all">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>
+                                            </button>
+                                            <button onclick="window.deleteMessage('${msg.id}')" class="p-1.5 hover:bg-white/10 rounded-lg text-zinc-500 hover:text-red-400 transition-all">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                                            </button>
+                                        </div>
+                                    ` : ''}
                                 </div>
                             </div>
                         `;
@@ -252,13 +282,25 @@ function renderChat() {
                 </div>
                 
                 <div class="p-4 border-t border-white/5 bg-black/20">
-                    <div class="flex gap-2">
-                        <input 
-                            type="text" 
-                            id="chat-input"
-                            class="flex-1 bg-white/5 border border-white/10 rounded-xl py-2 px-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
-                            placeholder="Type a message..."
-                        />
+                    <div class="flex items-center gap-2">
+                        <label class="cursor-pointer p-2 hover:bg-white/5 rounded-xl text-zinc-500 hover:text-emerald-400 transition-all">
+                            <input type="file" id="chat-image-input" class="hidden" accept="image/*" onchange="window.handleImageSelect(this)" />
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path></svg>
+                        </label>
+                        <div class="flex-1 relative">
+                            <input 
+                                type="text" 
+                                id="chat-input"
+                                class="w-full bg-white/5 border border-white/10 rounded-xl py-2 px-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
+                                placeholder="Type a message..."
+                            />
+                            <div id="image-preview" class="hidden absolute bottom-full left-0 mb-2 p-2 bg-zinc-900 border border-white/10 rounded-xl shadow-2xl">
+                                <img id="preview-img" src="" class="h-20 rounded-lg" />
+                                <button onclick="window.clearImagePreview()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-lg">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+                                </button>
+                            </div>
+                        </div>
                         <button 
                             onclick="window.sendChatMessage()"
                             class="bg-emerald-500 hover:bg-emerald-600 text-black p-2 rounded-xl transition-all"
@@ -437,22 +479,145 @@ window.leaveChat = async () => {
 };
 
 window.sendChatMessage = async () => {
+    const now = Date.now();
+    if (now - lastMessageSentAt < SLOW_MODE_MS) {
+        const remaining = Math.ceil((SLOW_MODE_MS - (now - lastMessageSentAt)) / 1000);
+        alert(`Slow mode active. Please wait ${remaining}s.`);
+        return;
+    }
+
     const input = document.getElementById('chat-input');
     const text = input.value.trim();
-    if (!text || !chatUsername || !db) return;
+    if (!text && !selectedImageBase64) return;
+    if (!chatUsername || !db) return;
 
     try {
         await addDoc(collection(db, 'messages'), {
-            text: text,
+            text: text || (selectedImageBase64 ? "Sent an image" : ""),
             username: chatUsername,
             timestamp: serverTimestamp(),
-            type: 'message'
+            type: 'message',
+            imageUrl: selectedImageBase64 || null
         });
+        lastMessageSentAt = Date.now();
         input.value = '';
+        window.clearImagePreview();
     } catch (e) {
         handleFirestoreError(e, OperationType.CREATE, 'messages');
     }
 };
+
+let selectedImageBase64 = null;
+
+window.handleImageSelect = (input) => {
+    const file = input.files[0];
+    if (!file) return;
+
+    if (file.size > 800000) { // Keep it under 800KB for Firestore 1MB limit
+        alert("Image is too large. Please select an image under 800KB.");
+        input.value = '';
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        selectedImageBase64 = e.target.result;
+        const preview = document.getElementById('image-preview');
+        const previewImg = document.getElementById('preview-img');
+        previewImg.src = selectedImageBase64;
+        preview.classList.remove('hidden');
+    };
+    reader.readAsDataURL(file);
+};
+
+window.clearImagePreview = () => {
+    selectedImageBase64 = null;
+    const preview = document.getElementById('image-preview');
+    if (preview) preview.classList.add('hidden');
+    const input = document.getElementById('chat-image-input');
+    if (input) input.value = '';
+};
+
+window.editMessagePrompt = async (id) => {
+    console.log("Attempting to edit message:", id);
+    const msg = messages.find(m => m.id === id);
+    if (!msg) {
+        console.error("Message not found in local state:", id);
+        alert("Error: Message not found. Try refreshing.");
+        return;
+    }
+
+    const newText = prompt("Edit your message:", msg.text);
+    if (newText === null || newText.trim() === "" || newText === msg.text) return;
+
+    try {
+        const msgRef = doc(db, 'messages', id);
+        await updateDoc(msgRef, { 
+            text: newText.trim(),
+            isEdited: true
+        });
+        console.log("Message edited successfully:", id);
+    } catch (e) {
+        console.error("Edit error:", e);
+        alert("Failed to edit message: " + e.message);
+    }
+};
+
+window.deleteMessage = async (id) => {
+    console.log("Attempting to delete message:", id);
+    if (!confirm("Are you sure you want to delete this message?")) return;
+    try {
+        await deleteDoc(doc(db, 'messages', id));
+        console.log("Message deleted successfully:", id);
+    } catch (e) {
+        console.error("Delete error:", e);
+        alert("Failed to delete message: " + e.message);
+    }
+};
+
+window.promptClearChat = async () => {
+    console.log("Prompting clear chat...");
+    const code = prompt("Enter admin code to clear chat:");
+    if (code === "15867") {
+        try {
+            const q = query(collection(db, 'messages'));
+            const snapshot = await getDocs(q);
+            console.log(`Found ${snapshot.size} messages to clear.`);
+            
+            const deletePromises = snapshot.docs.map(docSnap => deleteDoc(doc(db, 'messages', docSnap.id)));
+            await Promise.all(deletePromises);
+            
+            await addDoc(collection(db, 'messages'), {
+                text: "Chat was cleared by an administrator.",
+                username: 'System',
+                timestamp: serverTimestamp(),
+                type: 'system'
+            });
+            console.log("Chat cleared successfully.");
+        } catch (e) {
+            console.error("Clear error:", e);
+            alert("Failed to clear chat: " + e.message);
+        }
+    } else if (code !== null) {
+        alert("Incorrect code.");
+    }
+};
+
+// Auto-clear logic: Clear messages older than 15 minutes
+setInterval(async () => {
+    if (!db) return;
+    const fifteenMinsAgo = Date.now() - 15 * 60 * 1000;
+    const oldMessages = messages.filter(msg => {
+        const ts = msg.timestamp?.toMillis() || 0;
+        return ts < fifteenMinsAgo && msg.type !== 'system';
+    });
+
+    if (oldMessages.length > 0) {
+        console.log(`Auto-clearing ${oldMessages.length} old messages...`);
+        const deletePromises = oldMessages.map(msg => deleteDoc(doc(db, 'messages', msg.id)));
+        await Promise.all(deletePromises);
+    }
+}, 60000); // Check every minute
 
 window.selectGame = (id) => {
     selectedGame = games.find(g => g.id === id);
