@@ -23,6 +23,30 @@
         "lastSeen": { "type": "string", "format": "date-time", "description": "Last activity timestamp" }
       },
       "required": ["username", "lastSeen"]
+    },
+    "RegisteredUser": {
+      "title": "RegisteredUser",
+      "description": "A user registered with their real name",
+      "type": "object",
+      "properties": {
+        "realName": { "type": "string", "description": "The user's real name" },
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "isMuted": { "type": "boolean", "description": "Whether the user is muted in chat" },
+        "jumpscareTriggered": { "type": "boolean", "description": "Whether a jumpscare is triggered for this user" },
+        "registeredAt": { "type": "string", "format": "date-time", "description": "When the user registered" }
+      },
+      "required": ["realName", "uid", "isMuted", "registeredAt"]
+    },
+    "Announcement": {
+      "title": "Announcement",
+      "description": "A global or private announcement",
+      "type": "object",
+      "properties": {
+        "text": { "type": "string", "description": "The announcement content" },
+        "timestamp": { "type": "string", "format": "date-time", "description": "When it was sent" },
+        "targetUid": { "type": "string", "description": "Optional target user UID for private messages" }
+      },
+      "required": ["text", "timestamp"]
     }
   },
   "firestore": {
@@ -33,6 +57,14 @@
     "/active_users": {
       "schema": "ActiveUser",
       "description": "Collection of currently active users"
+    },
+    "/users": {
+      "schema": "RegisteredUser",
+      "description": "Collection of registered users"
+    },
+    "/announcements": {
+      "schema": "Announcement",
+      "description": "Collection of announcements"
     }
   }
 }

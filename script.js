@@ -1,5 +1,5 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
-import { getAuth } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 import { 
     getFirestore,
     collection, 
@@ -30,6 +30,19 @@ fetch('./firebase-applet-config.json')
         auth = getAuth(app);
         window.db = db; // For debugging if needed
         
+        signInAnonymously(auth).catch(err => console.error("Anonymous sign-in failed:", err));
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                if (user.email === "gigip9612@gmail.com") {
+                    initAdminListeners();
+                }
+                initUserListeners(user.uid);
+            }
+        });
+
+        checkEntryLogin();
+
         if (chatUsername) initFirebaseChat();
     })
     .catch(err => {
@@ -57,7 +70,7 @@ const games = [
     },
     {
         "id": "8ball",
-        "title": "8 Ball Billiards",
+        "title": "8 Ball Pool",
         "thumbnail": "https://img-cdn.heygame.io/gameimages/b16adad8-cff5-4274-84a3-3bc8e1a6205c-8%20Ball%20Pool%20Online.webp",
         "iframeUrl": "8ball.html"
     },
@@ -74,10 +87,10 @@ const games = [
         "iframeUrl": "blackjack-game.html"
     },
     {
-        "id": "dogeminer",
-        "title": "Doge Miner",
-        "thumbnail": "https://images.crazygames.com/games/doge-miner/cover-1593443166599.png?auto=format,compress&q=75&cs=strip&ch=DPR&w=1200&h=630&fit=crop",
-        "iframeUrl": "dogeminer.html"
+        "id": "spacebar-clicker",
+        "title": "Spacebar Clicker",
+        "thumbnail": "https://tse2.mm.bing.net/th/id/OIP.BaaQE0h22Ri8w4h2MAOZwgHaHa?pid=Api&h=220&P=0",
+        "iframeUrl": "spacebar-clicker.html"
     },
     {
         "id": "fnaf-ucn",
@@ -104,16 +117,16 @@ const games = [
         "iframeUrl": "ragdoll-hit.html"
     },
     {
-        "id": "bow-masters",
-        "title": "Bow Masters",
-        "thumbnail": "https://play-lh.googleusercontent.com/rsQyCuie6S8Munc2Hv6IMpePP1g3c0okLkyKRXd1IimOryIBMZqymGKaOg7bZ6NMkhj3",
-        "iframeUrl": "bow-masters.html"
+        "id": "ultrakill",
+        "title": "ULTRAKILL",
+        "thumbnail": "https://wallpapers.com/images/hd/ultrakill-game-artwork-xgsd9l8nrbkuldvg.jpg",
+        "iframeUrl": "ultrakill.html"
     },
     {
-        "id": "moto-x3m",
-        "title": "Moto X3M",
-        "thumbnail": "https://m.media-amazon.com/images/I/81OM9jKlJfL.png",
-        "iframeUrl": "moto-x3m.html"
+        "id": "drive-mad",
+        "title": "Drive Mad",
+        "thumbnail": "https://github.com/WanoCapy/ChickenKingsVault/blob/main/drivemad.png?raw=true",
+        "iframeUrl": "drive-mad.html"
     },
     {
         "id": "melon-playground",
@@ -126,6 +139,12 @@ const games = [
         "title": "Fnaf World",
         "thumbnail": "https://imag.malavida.com/mvimgbig/download-fs/fnaf-world-27444-3.jpg",
         "iframeUrl": "fnaf-world.html"
+    },
+    {
+        "id": "baldis-basics",
+        "title": "Baldi's Basics Plus",
+        "thumbnail": "https://i.ytimg.com/vi/7SKjBg1eslk/maxresdefault.jpg",
+        "iframeUrl": "baldis-basics.html"
     }
 ];
 
@@ -141,8 +160,11 @@ let unsubscribeAnnouncements = null;
 let heartbeatInterval = null;
 let lastMessageSentAt = 0;
 let isTrusted = false;
+let registeredUsers = [];
 let currentCatImage = '';
 let currentVideoId = '';
+let currentTheme = localStorage.getItem('currentTheme') || 'default';
+let customThemeUrl = localStorage.getItem('customThemeUrl') || '';
 const CAT_IMAGES = [
     'https://i.pinimg.com/736x/e9/7c/fe/e97cfea50835dc14689ba16f10a47216.jpg',
     'https://i.pinimg.com/736x/6f/44/60/6f446080c188b1eaaeb22264d9d250cd.jpg',
@@ -158,6 +180,13 @@ const CAT_IMAGES = [
 const SLOW_MODE_MS = 2000;
 const TRUSTED_CODE = "00999";
 
+function initAdminListeners() {
+    onSnapshot(collection(db, 'users'), (snapshot) => {
+        registeredUsers = snapshot.docs.map(doc => doc.data());
+        if (currentView === 'trusted') render();
+    });
+}
+
 const mainContent = document.getElementById('main-content');
 const searchInput = document.getElementById('search-input');
 const logo = document.getElementById('logo');
@@ -165,15 +194,19 @@ const navGames = document.getElementById('nav-games');
 const navChat = document.getElementById('nav-chat');
 const navOthers = document.getElementById('nav-others');
 const navVideo = document.getElementById('nav-video');
+const navThemes = document.getElementById('nav-themes');
 const navTrusted = document.getElementById('nav-trusted');
 
 function render() {
+    applyTheme(currentTheme, customThemeUrl);
     if (currentView === 'chat') {
         renderChat();
     } else if (currentView === 'others') {
         renderOthers();
     } else if (currentView === 'video') {
         renderVideoPlayer();
+    } else if (currentView === 'themes') {
+        renderThemes();
     } else if (currentView === 'trusted') {
         renderTrusted();
     } else if (selectedGame) {
@@ -189,12 +222,6 @@ const TRUSTED_GAMES = [
         "title": "Hotline Miami",
         "thumbnail": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/31184640-b024-47d1-b392-50174b836348/dfl2mir-25d215ac-7297-4ce0-a09e-2ba261ef9462.png/v1/fill/w_512,h_512/hotline_miami_icon_by_keke4050_dfl2mir-fullview.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9NTEyIiwicGF0aCI6IlwvZlwvMzExODQ2NDAtYjAyNC00N2QxLWIzOTItNTAxNzRiODM2MzQ4XC9kZmwybWlyLTI1ZDIxNWFjLTcyOTctNGNlMC1hMDllLTJiYTI2MWVmOTQ2Mi5wbmciLCJ3aWR0aCI6Ijw9NTEyIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmltYWdlLm9wZXJhdGlvbnMiXX0.tnba7n1PbhiiDb86u-VSiFcHpG2moicpYc3aMfTCtBA",
         "iframeUrl": "hotline-miami.html"
-    },
-    {
-        "id": "sonic-exe",
-        "title": "Sonic.EXE",
-        "thumbnail": "https://cdn2.steamgriddb.com/file/sgdb-cdn/logo_thumb/31c660c9bfd19dc8145532f33b9dc187.png",
-        "iframeUrl": "sonic-exe.html"
     }
 ];
 
@@ -320,19 +347,186 @@ function renderVideoPlayer() {
         input.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') window.loadVideo();
         });
-        if (currentVideoId) {
-            // If we have a video ID, we might want to show the URL in the input
-            // But for now let's keep it simple
-        }
     }
 }
+
+function renderThemes() {
+    mainContent.innerHTML = `
+        <div class="max-w-4xl mx-auto py-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div class="bg-zinc-900/50 border border-white/10 rounded-3xl p-8 backdrop-blur-xl">
+                <div class="flex items-center gap-4 mb-8">
+                    <div class="w-12 h-12 bg-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold">UI Themes</h2>
+                        <p class="text-zinc-500 text-sm">Customize your experience</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <button onclick="window.applyTheme('galaxy')" class="group relative overflow-hidden rounded-2xl aspect-video border border-white/10 hover:border-indigo-500/50 transition-all">
+                        <div class="absolute inset-0 bg-gradient-to-br from-blue-900 via-purple-900 to-black"></div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span class="text-xl font-bold group-hover:scale-110 transition-transform">Galaxy</span>
+                        </div>
+                    </button>
+
+                    <button onclick="window.applyTheme('nebula')" class="group relative overflow-hidden rounded-2xl aspect-video border border-white/10 hover:border-pink-500/50 transition-all">
+                        <div class="absolute inset-0 bg-gradient-to-br from-pink-600 via-purple-700 to-blue-800"></div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span class="text-xl font-bold group-hover:scale-110 transition-transform">Nebula</span>
+                        </div>
+                    </button>
+
+                    <button onclick="window.applyTheme('iidk')" class="group relative overflow-hidden rounded-2xl aspect-video border border-white/10 hover:border-orange-500/50 transition-all">
+                        <div class="absolute inset-0 bg-gradient-to-br from-orange-500 to-red-600"></div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span class="text-xl font-bold group-hover:scale-110 transition-transform">IIDK (Orange)</span>
+                        </div>
+                    </button>
+
+                    <button onclick="window.showCustomThemePopup()" class="group relative overflow-hidden rounded-2xl aspect-video border border-white/10 hover:border-emerald-500/50 transition-all">
+                        <div class="absolute inset-0 bg-zinc-800 flex flex-col items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-zinc-500"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                            <span class="text-xl font-bold group-hover:scale-110 transition-transform">Custom Image</span>
+                        </div>
+                    </button>
+                </div>
+
+                <div class="mt-8 flex justify-center">
+                    <button onclick="window.applyTheme('default')" class="text-zinc-500 hover:text-white transition-colors text-sm underline underline-offset-4">Reset to Default</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Theme Popup -->
+        <div id="theme-popup" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm hidden animate-in fade-in duration-300">
+            <div class="bg-zinc-900 border border-white/10 rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl animate-in zoom-in-95 duration-300">
+                <h3 class="text-xl font-bold mb-2">Custom Background</h3>
+                <p class="text-zinc-500 text-sm mb-6">Enter an image URL to set as your background.</p>
+                
+                <input 
+                    type="text" 
+                    id="custom-theme-input"
+                    placeholder="https://example.com/image.jpg"
+                    class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all mb-6"
+                />
+
+                <div class="flex gap-3">
+                    <button 
+                        onclick="window.closeThemePopup()"
+                        class="flex-1 bg-white/5 hover:bg-white/10 text-white font-bold py-4 rounded-2xl transition-all active:scale-95"
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        onclick="window.applyCustomTheme()"
+                        class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
+                    >
+                        Apply
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+window.showCustomThemePopup = () => {
+    const popup = document.getElementById('theme-popup');
+    if (popup) popup.classList.remove('hidden');
+};
+
+window.closeThemePopup = () => {
+    const popup = document.getElementById('theme-popup');
+    if (popup) popup.classList.add('hidden');
+};
+
+window.applyCustomTheme = () => {
+    const input = document.getElementById('custom-theme-input');
+    const url = input.value.trim();
+    if (url) {
+        window.applyTheme('custom', url);
+        window.closeThemePopup();
+    }
+};
+
+window.applyTheme = (theme, customUrl = '') => {
+    currentTheme = theme;
+    customThemeUrl = customUrl;
+    localStorage.setItem('currentTheme', theme);
+    localStorage.setItem('customThemeUrl', customUrl);
+
+    const bgOverlay = document.getElementById('theme-bg-overlay');
+    const mainHeader = document.getElementById('main-header');
+    const navContainer = document.getElementById('nav-container');
+    const headerSearch = document.getElementById('search-input');
+    if (!bgOverlay || !mainHeader) return;
+
+    bgOverlay.className = 'fixed inset-0 -z-10 transition-all duration-1000';
+    bgOverlay.style.backgroundImage = '';
+    bgOverlay.style.backgroundSize = 'cover';
+    bgOverlay.style.backgroundPosition = 'center';
+
+    mainHeader.className = 'sticky top-0 z-40 backdrop-blur-xl border-b transition-all duration-1000';
+    if (navContainer) navContainer.className = 'hidden sm:flex items-center gap-6 text-sm font-medium transition-colors duration-1000';
+    if (headerSearch) headerSearch.className = 'w-full rounded-full py-2 pl-10 pr-4 focus:outline-none focus:ring-2 transition-all duration-1000';
+
+    switch (theme) {
+        case 'galaxy':
+            bgOverlay.classList.add('bg-gradient-to-br', 'from-blue-900', 'via-purple-900', 'to-black');
+            mainHeader.classList.add('bg-blue-950/80', 'border-blue-500/20', 'text-white');
+            if (navContainer) navContainer.classList.add('text-blue-200');
+            if (headerSearch) headerSearch.classList.add('bg-blue-900/30', 'border-blue-500/30', 'text-white', 'placeholder:text-blue-400/50', 'focus:ring-blue-500/50');
+            break;
+        case 'nebula':
+            bgOverlay.classList.add('bg-gradient-to-br', 'from-pink-600', 'via-purple-700', 'to-blue-800');
+            mainHeader.classList.add('bg-purple-900/80', 'border-pink-500/20', 'text-white');
+            if (navContainer) navContainer.classList.add('text-pink-200');
+            if (headerSearch) headerSearch.classList.add('bg-purple-800/30', 'border-pink-500/30', 'text-white', 'placeholder:text-pink-400/50', 'focus:ring-pink-500/50');
+            break;
+        case 'iidk':
+            bgOverlay.classList.add('bg-gradient-to-br', 'from-orange-500', 'to-red-600');
+            mainHeader.classList.add('bg-orange-900/80', 'border-orange-500/20', 'text-white');
+            if (navContainer) navContainer.classList.add('text-orange-200');
+            if (headerSearch) headerSearch.classList.add('bg-orange-800/30', 'border-orange-500/30', 'text-white', 'placeholder:text-orange-400/50', 'focus:ring-orange-500/50');
+            break;
+        case 'custom':
+            bgOverlay.style.backgroundImage = `url('${customUrl}')`;
+            mainHeader.classList.add('bg-black/60', 'border-white/10', 'text-white');
+            if (navContainer) navContainer.classList.add('text-zinc-300');
+            if (headerSearch) headerSearch.classList.add('bg-white/5', 'border-white/10', 'text-white', 'placeholder:text-zinc-600', 'focus:ring-emerald-500/50');
+            break;
+        default:
+            bgOverlay.classList.add('bg-[#0a0a0c]');
+            mainHeader.classList.add('bg-[#0a0a0c]/80', 'border-white/5', 'text-zinc-100');
+            if (navContainer) navContainer.classList.add('text-zinc-400');
+            if (headerSearch) headerSearch.classList.add('bg-white/5', 'border-white/10', 'text-zinc-100', 'placeholder:text-zinc-600', 'focus:ring-emerald-500/50');
+            break;
+    }
+};
+
+window.toggleFullscreen = () => {
+    const iframe = document.getElementById('game-iframe');
+    if (!iframe) return;
+
+    if (iframe.requestFullscreen) {
+        iframe.requestFullscreen();
+    } else if (iframe.mozRequestFullScreen) { // Firefox
+        iframe.mozRequestFullScreen();
+    } else if (iframe.webkitRequestFullscreen) { // Chrome, Safari and Opera
+        iframe.webkitRequestFullscreen();
+    } else if (iframe.msRequestFullscreen) { // IE/Edge
+        iframe.msRequestFullscreen();
+    }
+};
 
 window.loadVideo = () => {
     const input = document.getElementById('youtube-url-input');
     const val = input.value.trim();
     if (!val) return;
 
-    let videoId = '';
+    let videoId;
     
     // Extract ID from various YouTube URL formats
     if (val.includes('youtube.com/watch?v=')) {
@@ -392,6 +586,69 @@ function renderTrusted() {
 
     mainContent.innerHTML = `
         <div class="max-w-4xl mx-auto py-12 animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
+            <div class="bg-zinc-900/50 border border-white/10 rounded-3xl p-8 backdrop-blur-xl">
+                <div class="flex items-center justify-between mb-8">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center text-emerald-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"></path></svg>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-bold">User Logs & Moderation</h2>
+                            <p class="text-zinc-500 text-sm">Manage active users and mute status</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto mb-8">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="border-b border-white/5 text-zinc-500 text-sm">
+                                <th class="pb-4 font-medium">Username</th>
+                                <th class="pb-4 font-medium">Status</th>
+                                <th class="pb-4 font-medium">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/5">
+                            ${registeredUsers.map(user => `
+                                <tr class="group">
+                                    <td class="py-4 font-medium">${user.username}</td>
+                                    <td class="py-4">
+                                        <span class="px-2 py-1 rounded-full text-[10px] font-bold uppercase ${user.isMuted ? 'bg-red-500/20 text-red-500' : 'bg-emerald-500/20 text-emerald-500'}">
+                                            ${user.isMuted ? (user.mutedUntil ? `Muted until ${new Date(user.mutedUntil.toMillis()).toLocaleTimeString()}` : 'Muted') : 'Active'}
+                                        </span>
+                                    </td>
+                                    <td class="py-4">
+                                        <div class="flex items-center gap-2">
+                                            <button 
+                                                onclick="window.promptMute('${user.username}', ${user.isMuted})"
+                                                class="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors text-zinc-400 hover:text-white"
+                                                title="${user.isMuted ? 'Unmute' : 'Mute'}"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${user.isMuted ? '<path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>' : '<path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>'}</svg>
+                                            </button>
+                                            <button 
+                                                onclick="window.triggerJumpscare('${user.uid}')"
+                                                class="p-2 rounded-lg bg-white/5 hover:bg-red-500/20 transition-colors text-zinc-400 hover:text-red-500"
+                                                title="Jumpscare"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                                            </button>
+                                            <button 
+                                                onclick="window.promptPrivateMessage('${user.username}', '${user.username}')"
+                                                class="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors text-zinc-400 hover:text-white"
+                                                title="Send Private Message"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <div class="bg-zinc-900/50 border border-white/10 rounded-3xl p-8 backdrop-blur-xl">
                 <div class="flex items-center gap-3 mb-6">
                     <div class="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center text-emerald-500">
@@ -552,7 +809,11 @@ function renderPlayer() {
                     <h2 class="text-2xl font-bold">${selectedGame.title}</h2>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button class="p-2 hover:bg-white/5 rounded-lg transition-colors text-zinc-400 hover:text-white">
+                    <button 
+                        onclick="window.toggleFullscreen()"
+                        class="p-2 hover:bg-white/5 rounded-lg transition-colors text-zinc-400 hover:text-white"
+                        title="Toggle Fullscreen"
+                    >
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"></path><path d="M21 8V5a2 2 0 0 0-2-2h-3"></path><path d="M3 16v3a2 2 0 0 0 2 2h3"></path><path d="M16 21h3a2 2 0 0 0 2-2v-3"></path></svg>
                     </button>
                     <a 
@@ -568,6 +829,7 @@ function renderPlayer() {
 
             <div class="relative aspect-video w-full bg-black rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
                 <iframe
+                    id="game-iframe"
                     src="${selectedGame.iframeUrl}"
                     class="w-full h-full border-none"
                     title="${selectedGame.title}"
@@ -754,6 +1016,8 @@ function initAnnouncements() {
         
         if (doc.id !== lastAnnouncementId) {
             lastAnnouncementId = doc.id;
+            // Check if it's a private message for someone else
+            if (data.targetUsername && data.targetUsername !== chatUsername) return;
             showAnnouncement(data.text);
         }
     });
@@ -810,6 +1074,55 @@ window.joinTrusted = () => {
     }
 };
 
+window.promptMute = async (username, currentMuted) => {
+    if (currentMuted) {
+        if (confirm(`Unmute ${username}?`)) {
+            try {
+                await updateDoc(doc(db, 'users', username), {
+                    isMuted: false,
+                    mutedUntil: null
+                });
+            } catch (e) {
+                console.error("Unmute failed:", e);
+            }
+        }
+        return;
+    }
+
+    const duration = prompt(`Mute ${username} for how many minutes? (Leave empty for permanent)`);
+    if (duration === null) return;
+
+    const mutedUntil = duration ? new Date(Date.now() + parseInt(duration) * 60000) : null;
+
+    try {
+        await updateDoc(doc(db, 'users', username), {
+            isMuted: true,
+            mutedUntil: mutedUntil
+        });
+        alert(`${username} muted.`);
+    } catch (e) {
+        console.error("Mute failed:", e);
+        alert("Failed to mute user.");
+    }
+};
+
+window.promptPrivateMessage = async (username, name) => {
+    const msg = prompt(`Send a private announcement to ${name}:`);
+    if (!msg) return;
+
+    try {
+        await addDoc(collection(db, 'announcements'), {
+            text: `[PRIVATE] ${msg}`,
+            timestamp: serverTimestamp(),
+            targetUsername: username
+        });
+        alert("Message sent!");
+    } catch (e) {
+        console.error("Private message failed:", e);
+        alert("Failed to send message.");
+    }
+};
+
 function handleFirestoreError(error, operationType, path) {
     const errInfo = {
         error: error instanceof Error ? error.message : String(error),
@@ -827,7 +1140,11 @@ function handleFirestoreError(error, operationType, path) {
     // Show user-friendly error in UI if possible
     const errorEl = document.getElementById('username-error');
     if (errorEl) {
-        errorEl.textContent = "Connection issue. Please check if Anonymous Auth is enabled in Firebase.";
+        if (error.message?.includes('permission-denied')) {
+            errorEl.textContent = "Permission denied. Please try a different username.";
+        } else {
+            errorEl.textContent = "Connection issue. Please try again in a moment.";
+        }
         errorEl.classList.remove('hidden');
     }
     
@@ -892,11 +1209,35 @@ window.joinChat = async () => {
     if (errorEl) errorEl.classList.add('hidden');
 
     try {
-        const userRef = doc(db, 'active_users', username);
+        // Check if user is muted
+        const userRef = doc(db, 'users', username);
         const userSnap = await getDoc(userRef);
         
         if (userSnap.exists()) {
             const data = userSnap.data();
+            if (data.isMuted) {
+                if (data.mutedUntil && data.mutedUntil.toMillis() > Date.now()) {
+                    const remaining = Math.ceil((data.mutedUntil.toMillis() - Date.now()) / 60000);
+                    if (errorEl) {
+                        errorEl.textContent = `This username is muted for ${remaining} more minutes.`;
+                        errorEl.classList.remove('hidden');
+                    }
+                    return;
+                } else if (!data.mutedUntil) {
+                    if (errorEl) {
+                        errorEl.textContent = "This username is permanently muted.";
+                        errorEl.classList.remove('hidden');
+                    }
+                    return;
+                }
+            }
+        }
+
+        // Check if username is active
+        const activeRef = doc(db, 'active_users', username);
+        const activeSnap = await getDoc(activeRef);
+        if (activeSnap.exists()) {
+            const data = activeSnap.data();
             const lastSeen = data.lastSeen?.toMillis() || 0;
             if ((Date.now() - lastSeen) < 120000) {
                 if (errorEl) {
@@ -907,7 +1248,16 @@ window.joinChat = async () => {
             }
         }
 
-        await setDoc(userRef, { 
+        // Create/Update user profile for moderation
+        await setDoc(userRef, {
+            username: username,
+            lastSeen: serverTimestamp(),
+            isMuted: userSnap.exists() ? (userSnap.data().isMuted || false) : false,
+            mutedUntil: userSnap.exists() ? (userSnap.data().mutedUntil || null) : null
+        }, { merge: true });
+
+        // Set active status
+        await setDoc(activeRef, { 
             username: username, 
             lastSeen: serverTimestamp() 
         });
@@ -956,6 +1306,28 @@ window.leaveChat = async () => {
 };
 
 window.sendChatMessage = async () => {
+    // Check mute status locally first
+    if (chatUsername && db) {
+        try {
+            const userSnap = await getDoc(doc(db, 'users', chatUsername));
+            if (userSnap.exists()) {
+                const data = userSnap.data();
+                if (data.isMuted) {
+                    if (data.mutedUntil && data.mutedUntil.toMillis() > Date.now()) {
+                        const remaining = Math.ceil((data.mutedUntil.toMillis() - Date.now()) / 60000);
+                        alert(`You are muted for ${remaining} more minutes.`);
+                        return;
+                    } else if (!data.mutedUntil) {
+                        alert("You are permanently muted.");
+                        return;
+                    }
+                }
+            }
+        } catch (e) {
+            console.error("Mute check failed:", e);
+        }
+    }
+
     const now = Date.now();
     if (now - lastMessageSentAt < SLOW_MODE_MS) {
         const remaining = Math.ceil((SLOW_MODE_MS - (now - lastMessageSentAt)) / 1000);
@@ -1143,6 +1515,11 @@ navVideo.addEventListener('click', () => {
     render();
 });
 
+navThemes.addEventListener('click', () => {
+    currentView = 'themes';
+    render();
+});
+
 navTrusted.addEventListener('click', () => {
     currentView = 'trusted';
     render();
@@ -1151,5 +1528,73 @@ navTrusted.addEventListener('click', () => {
 // Initial render
 render();
 if (chatUsername) initFirebaseChat();
+
+function checkEntryLogin() {
+    const savedName = sessionStorage.getItem('user_name');
+    const overlay = document.getElementById('entry-login-overlay');
+    if (!savedName) {
+        overlay.classList.remove('hidden');
+        document.getElementById('entry-login-btn').onclick = async () => {
+            const name = document.getElementById('entry-name-input').value.trim();
+            if (name.length >= 2) {
+                sessionStorage.setItem('user_name', name);
+                overlay.classList.add('hidden');
+                if (auth.currentUser) {
+                    await registerUser(auth.currentUser.uid, name);
+                }
+            }
+        };
+    }
+}
+
+async function registerUser(uid, name) {
+    if (!db) return;
+    await setDoc(doc(db, 'users', uid), {
+        username: name,
+        uid: uid,
+        isMuted: false,
+        jumpscareTriggered: false,
+        lastSeen: serverTimestamp()
+    }, { merge: true });
+}
+
+function initUserListeners(uid) {
+    if (!db) return;
+    onSnapshot(doc(db, 'users', uid), (snapshot) => {
+        if (snapshot.exists()) {
+            const data = snapshot.data();
+            if (data.jumpscareTriggered) {
+                triggerJumpscareEffect(uid);
+            }
+        }
+    });
+}
+
+function triggerJumpscareEffect(uid) {
+    const overlay = document.getElementById('jumpscare-overlay');
+    overlay.classList.remove('hidden');
+    
+    // Reset the GIF by re-setting the src
+    const img = document.getElementById('jumpscare-img');
+    const originalSrc = img.src;
+    img.src = '';
+    img.src = originalSrc;
+
+    setTimeout(async () => {
+        overlay.classList.add('hidden');
+        if (db) {
+            await updateDoc(doc(db, 'users', uid), {
+                jumpscareTriggered: false
+            });
+        }
+    }, 3000); // GIF duration approx 3 seconds
+}
+
+window.triggerJumpscare = async (uid) => {
+    if (!db) return;
+    await updateDoc(doc(db, 'users', uid), {
+        jumpscareTriggered: true
+    });
+};
 
 

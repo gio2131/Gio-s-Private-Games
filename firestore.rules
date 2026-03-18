@@ -27,14 +27,24 @@ service cloud.firestore {
     
     function isValidMessage(data) {
       return data.keys().hasAll(['text', 'username', 'timestamp', 'type']) &&
-             data.text is string && data.text.size() > 0 && data.text.size() <= 1000 &&
+             data.text is string && data.text.size() <= 1000 &&
              data.username is string && data.username.size() >= 2 && data.username.size() <= 20 &&
              data.type in ['message', 'system'];
     }
 
-    function isValidUser(data) {
+    function isValidActiveUser(data) {
       return data.keys().hasAll(['username', 'lastSeen']) &&
              data.username is string && data.username.size() >= 2 && data.username.size() <= 20;
+    }
+
+    function isValidModeratedUser(data) {
+      return data.keys().hasAll(['username', 'lastSeen', 'isMuted']) &&
+             data.username is string && data.username.size() >= 2 && data.username.size() <= 20 &&
+             data.isMuted is bool;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (request.auth.token.email == "gigip9612@gmail.com" && request.auth.token.email_verified == true);
     }
 
     // Messages collection
@@ -44,10 +54,15 @@ service cloud.firestore {
 
     // Active users collection
     match /active_users/{username} {
+      allow read, write: if true;
+    }
+
+    // Users collection (for moderation)
+    match /users/{userId} {
       allow read: if true;
-      allow create: if isValidUser(request.resource.data) && request.resource.data.username == username;
-      allow update: if isValidUser(request.resource.data) && resource.data.username == username;
-      allow delete: if resource.data.username == username;
+      allow create: if true;
+      allow update: if true;
+      allow delete: if isAdmin();
     }
 
     // Announcements collection

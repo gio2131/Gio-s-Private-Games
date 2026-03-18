@@ -1,7 +1,6 @@
 import express from "express";
 import { createServer } from "http";
 import { WebSocketServer, WebSocket } from "ws";
-import { createServer as createViteServer } from "vite";
 import path from "path";
 
 async function startServer() {
