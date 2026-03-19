@@ -69,5 +69,11 @@ service cloud.firestore {
     match /announcements/{announcementId} {
       allow read, write: if true;
     }
+
+    // Suggestions collection
+    match /suggestions/{suggestionId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+    }
   }
 }

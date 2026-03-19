@@ -1608,26 +1608,18 @@ render();
 if (chatUsername) initFirebaseChat();
 
 function checkEntryLogin() {
-    const savedName = sessionStorage.getItem('user_name');
     const overlay = document.getElementById('entry-login-overlay');
-    if (!savedName) {
-        overlay.classList.remove('hidden');
-        document.getElementById('entry-login-btn').onclick = async () => {
-            const name = document.getElementById('entry-name-input').value.trim();
-            if (name.length >= 2) {
-                sessionStorage.setItem('user_name', name);
-                overlay.classList.add('hidden');
-                if (auth.currentUser) {
-                    await registerUser(auth.currentUser.uid, name);
-                }
+    overlay.classList.remove('hidden');
+    document.getElementById('entry-login-btn').onclick = async () => {
+        const name = document.getElementById('entry-name-input').value.trim();
+        if (name.length >= 2) {
+            sessionStorage.setItem('user_name', name);
+            overlay.classList.add('hidden');
+            if (auth.currentUser) {
+                await registerUser(auth.currentUser.uid, name);
             }
-        };
-    } else {
-        // User already has a name, ensure they are registered
-        if (auth.currentUser) {
-            registerUser(auth.currentUser.uid, savedName);
         }
-    }
+    };
 }
 
 async function registerUser(uid, name) {
