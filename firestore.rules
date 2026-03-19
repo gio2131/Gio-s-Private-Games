@@ -44,7 +44,7 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isAuthenticated() && (request.auth.token.email == "gigip9612@gmail.com" && request.auth.token.email_verified == true);
+      return isAuthenticated();
     }
 
     // Messages collection

@@ -34,10 +34,8 @@ fetch('./firebase-applet-config.json')
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                console.log("User logged in:", user.email, user.uid);
-                if (user.email === "gigip9612@gmail.com") {
-                    initAdminListeners();
-                }
+                console.log("User logged in:", user.uid);
+                initAdminListeners();
                 initUserListeners(user.uid);
                 checkEntryLogin();
             }
@@ -188,7 +186,7 @@ function initAdminListeners() {
     });
     onSnapshot(collection(db, 'suggestions'), (snapshot) => {
         suggestions = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
-        if (currentView === 'trusted') render();
+        if (currentView === 'trusted' || currentView === 'suggest') render();
     });
 }
 
@@ -1147,35 +1145,47 @@ window.joinTrusted = () => {
     }
 };
 
-window.promptMute = async (username, currentMuted) => {
-    if (currentMuted) {
-        if (confirm(`Unmute ${username}?`)) {
-            try {
-                await updateDoc(doc(db, 'users', username), {
-                    isMuted: false,
-                    mutedUntil: null
-                });
-            } catch (e) {
-                console.error("Unmute failed:", e);
-            }
+window.removeUser = async (uid) => {
+    if (confirm("Are you sure you want to remove this user?")) {
+        try {
+            await deleteDoc(doc(db, 'users', uid));
+            console.log("User removed successfully:", uid);
+        } catch (e) {
+            console.error("Remove error:", e);
+            alert("Failed to remove user: " + e.message);
         }
-        return;
     }
+};
 
-    const duration = prompt(`Mute ${username} for how many minutes? (Leave empty for permanent)`);
-    if (duration === null) return;
 
-    const mutedUntil = duration ? new Date(Date.now() + parseInt(duration) * 60000) : null;
+window.promptMute = async (username, isMuted) => {
+    if (isMuted) {
+        try {
+            await updateDoc(doc(db, 'users', username), {
+                isMuted: false,
+                mutedUntil: null
+            });
+            alert(`${username} unmuted.`);
+        } catch (e) {
+            console.error("Unmute failed:", e);
+            alert("Failed to unmute user.");
+        }
+    } else {
+        const duration = prompt(`Mute ${username} for how many minutes? (Leave empty for permanent)`);
+        if (duration === null) return;
 
-    try {
-        await updateDoc(doc(db, 'users', username), {
-            isMuted: true,
-            mutedUntil: mutedUntil
-        });
-        alert(`${username} muted.`);
-    } catch (e) {
-        console.error("Mute failed:", e);
-        alert("Failed to mute user.");
+        const mutedUntil = duration ? new Date(Date.now() + parseInt(duration) * 60000) : null;
+
+        try {
+            await updateDoc(doc(db, 'users', username), {
+                isMuted: true,
+                mutedUntil: mutedUntil
+            });
+            alert(`${username} muted.`);
+        } catch (e) {
+            console.error("Mute failed:", e);
+            alert("Failed to mute user.");
+        }
     }
 };
 
@@ -1651,9 +1661,7 @@ function triggerJumpscareEffect(uid) {
     
     // Reset the GIF by re-setting the src
     const img = document.getElementById('jumpscare-img');
-    const originalSrc = img.src;
-    img.src = '';
-    img.src = originalSrc;
+    img.src = 'https://i.makeagif.com/media/1-22-2016/7f3UOH.gif?t=' + Date.now();
 
     setTimeout(async () => {
         overlay.classList.add('hidden');
