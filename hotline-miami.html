@@ -22,7 +22,7 @@
     </div>
 
     <div class="frame-wrapper" id="frameWrapper">
-        <iframe id="gameFrame" src="Hotline Miami.html" allowfullscreen allow="fullscreen"></iframe>
+        <iframe id="gameFrame" src="https://cdn.jsdelivr.net/gh/AndreajnRcm4/b398dl2h74v@9a23fbb2373d743a564873251cbb57736ebc1f73/hotline-miami.html" allowfullscreen allow="fullscreen"></iframe>
     </div>
 
     <script>
@@ -52,8 +52,6 @@
         fsBtn.addEventListener('click', async () => {
             try {
                 if (!isFullscreen()) {
-                    // Many browsers don't allow making a cross-origin iframe the fullscreen root,
-                    // so request fullscreen on the wrapper element instead.
                     await requestFull(wrapper);
                     fsBtn.textContent = 'Exit fullscreen';
                 } else {
@@ -65,12 +63,10 @@
             }
         });
 
-        // Home button navigates to index.html
         homeBtn.addEventListener('click', () => {
             window.location.href = 'index.html';
         });
 
-        // Update button text if user exits fullscreen via ESC or browser UI
         document.addEventListener('fullscreenchange', () => {
             fsBtn.textContent = isFullscreen() ? 'Exit fullscreen' : 'Enter fullscreen';
         });
