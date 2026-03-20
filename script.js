@@ -103,12 +103,6 @@ const games = [
         "iframeUrl": "spacebar-clicker.html"
     },
     {
-        "id": "fnaf-ucn",
-        "title": "FNAF UCN",
-        "thumbnail": "https://play-lh.googleusercontent.com/pB7dsLLcRgADtFpEPeKc5mSyAn1E1JzrdQ1V7-Y5hizgub3G8e9UJIc5opC9mYXKSBw",
-        "iframeUrl": "fnaf-ucn.html"
-    },
-    {
         "id": "geometry-dash",
         "title": "Geometry Dash",
         "thumbnail": "https://is1-ssl.mzstatic.com/image/thumb/Purple112/v4/2a/6f/ea/2a6feaae-3202-5356-eb1b-409208bcb0af/AppIcon-0-0-1x_U007emarketing-0-0-0-10-0-0-sRGB-0-0-0-GLES2_U002c0-512MB-85-220-0-0.png/1200x630wa.png",
@@ -145,16 +139,52 @@ const games = [
         "iframeUrl": "melon-playground.html"
     },
     {
-        "id": "fnaf-world",
-        "title": "Fnaf World",
-        "thumbnail": "https://imag.malavida.com/mvimgbig/download-fs/fnaf-world-27444-3.jpg",
-        "iframeUrl": "fnaf-world.html"
-    },
-    {
         "id": "baldis-basics",
         "title": "Baldi's Basics Plus",
         "thumbnail": "https://i.ytimg.com/vi/7SKjBg1eslk/maxresdefault.jpg",
         "iframeUrl": "baldis-basics.html"
+    },
+    {
+        "id": "fnaf1",
+        "title": "Five Nights at Freddy's 1",
+        "thumbnail": "https://image.api.playstation.com/vulcan/img/cfn/11307DoSLwchucsk9cIFbYAUkuJPuQv-VO-yZnBwENvMx2LIl8KhWu89t3V7zhDTFfE55wbSW5908XNkd_RJeNid8t4tbScw.png",
+        "iframeUrl": "fnaf1.html"
+    },
+    {
+        "id": "fnaf2",
+        "title": "Five Nights at Freddy's 2",
+        "thumbnail": "https://tse1.mm.bing.net/th/id/OIP.WbMxAHSM184KwBFjFxyg8wHaEK?pid=Api&h=220&P=0",
+        "iframeUrl": "fnaf2.html"
+    },
+    {
+        "id": "fnaf3",
+        "title": "Five Nights at Freddy's 3",
+        "thumbnail": "https://assets.nintendo.com/image/upload/c_fill,w_1200/q_auto:best/f_auto/dpr_2.0/ncom/software/switch/70010000024638/08708de0a6534fc7ace6a3a76fa4a0a2294c27484a20d93146f66d392699ee5f",
+        "iframeUrl": "fnaf3.html"
+    },
+    {
+        "id": "fnaf4",
+        "title": "Five Nights at Freddy's 4",
+        "thumbnail": "https://assets.nintendo.com/image/upload/c_fill,w_1200/q_auto:best/f_auto/dpr_2.0/ncom/en_US/games/switch/f/five-nights-at-freddys-4-switch/hero",
+        "iframeUrl": "fnaf4.html"
+    },
+    {
+        "id": "fnaf-ps",
+        "title": "Five Nights at Freddy's Pizzeria Simulator",
+        "thumbnail": "https://nintendoeverything.com/wp-content/uploads/freddy-fazbears-pizza-simulator-1.jpg",
+        "iframeUrl": "fnaf-ps.html"
+    },
+    {
+        "id": "fnaf-ucn",
+        "title": "FNAF UCN",
+        "thumbnail": "https://play-lh.googleusercontent.com/pB7dsLLcRgADtFpEPeKc5mSyAn1E1JzrdQ1V7-Y5hizgub3G8e9UJIc5opC9mYXKSBw",
+        "iframeUrl": "fnaf-ucn.html"
+    },
+    {
+        "id": "fnaf-world",
+        "title": "Fnaf World",
+        "thumbnail": "https://imag.malavida.com/mvimgbig/download-fs/fnaf-world-27444-3.jpg",
+        "iframeUrl": "fnaf-world.html"
     }
 ];
 
