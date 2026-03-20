@@ -49,6 +49,18 @@ fetch('./firebase-applet-config.json')
 
 const games = [
     {
+        "id": "csgo-clicker",
+        "title": "CS:GO Clicker",
+        "thumbnail": "https://s.yimg.com/fz/api/res/1.2/xrJXp46VQQK.ekX3EV1uEg--~C/YXBwaWQ9c3JjaGRkO2ZpPWZpbGw7aD0yNDA7cT0xMDA7dz0yNDA-/https://s.yimg.com/cv/apiv2/default/20230504/cs-go.png",
+        "iframeUrl": "csgo-clicker.html"
+    },
+    {
+        "id": "basketball-stars",
+        "title": "Basketball Stars",
+        "thumbnail": "https://img-cdn.heygame.io/gameimages/8efc8be9-15e4-4a70-8d5d-3082252dd12e-Basketball%20Stars.webp",
+        "iframeUrl": "basketball-stars.html"
+    },
+    {
         "id": "pvz",
         "title": "Plants Vs Zombies",
         "thumbnail": "https://vignette.wikia.nocookie.net/logopedia/images/0/01/Pvz_logo_stacked_rgb.png/revision/latest?cb=20120408101754",
@@ -228,6 +240,12 @@ const TRUSTED_GAMES = [
         "title": "Hotline Miami",
         "thumbnail": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/31184640-b024-47d1-b392-50174b836348/dfl2mir-25d215ac-7297-4ce0-a09e-2ba261ef9462.png/v1/fill/w_512,h_512/hotline_miami_icon_by_keke4050_dfl2mir-fullview.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9NTEyIiwicGF0aCI6IlwvZlwvMzExODQ2NDAtYjAyNC00N2QxLWIzOTItNTAxNzRiODM2MzQ4XC9kZmwybWlyLTI1ZDIxNWFjLTcyOTctNGNlMC1hMDllLTJiYTI2MWVmOTQ2Mi5wbmciLCJ3aWR0aCI6Ijw9NTEyIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmltYWdlLm9wZXJhdGlvbnMiXX0.tnba7n1PbhiiDb86u-VSiFcHpG2moicpYc3aMfTCtBA",
         "iframeUrl": "hotline-miami.html"
+    },
+    {
+        "id": "moto-x3m-winter",
+        "title": "MOTO X3M WINTER",
+        "thumbnail": "https://img1.ugamezone.com/201901/2019/0505/94/c/553161/original.jpg",
+        "iframeUrl": "moto-x3m-winter.html"
     }
 ];
 
@@ -635,6 +653,12 @@ function renderTrusted() {
                             <p class="text-zinc-500 text-sm">Manage active users and mute status</p>
                         </div>
                     </div>
+                    <button 
+                        onclick="window.openUploadModal()"
+                        class="bg-emerald-500 hover:bg-emerald-600 text-black font-bold py-2 px-4 rounded-xl transition-all shadow-lg shadow-emerald-500/20"
+                    >
+                        Upload Game
+                    </button>
                 </div>
 
                 <div class="overflow-x-auto mb-8">
@@ -670,6 +694,27 @@ function renderTrusted() {
                                                 title="Jumpscare"
                                             >
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                                            </button>
+                                            <button 
+                                                onclick="window.removeUserFromLogs('${user.uid}')"
+                                                class="p-2 rounded-lg bg-white/5 hover:bg-red-500/20 transition-colors text-zinc-400 hover:text-red-500"
+                                                title="Remove"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                            </button>
+                                            <button 
+                                                onclick="window.triggerFullscreen('${user.uid}')"
+                                                class="p-2 rounded-lg bg-white/5 hover:bg-blue-500/20 transition-colors text-zinc-400 hover:text-blue-500"
+                                                title="Fullscreen"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+                                            </button>
+                                            <button 
+                                                onclick="window.promptImageScreen('${user.uid}')"
+                                                class="p-2 rounded-lg bg-white/5 hover:bg-purple-500/20 transition-colors text-zinc-400 hover:text-purple-500"
+                                                title="Image Screen"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
                                             </button>
                                             <button 
                                                 onclick="window.promptPrivateMessage('${user.username}', '${user.username}')"
@@ -1651,6 +1696,14 @@ function initUserListeners(uid) {
             if (data.jumpscareTriggered) {
                 triggerJumpscareEffect(uid);
             }
+            if (data.fullscreenTriggered) {
+                window.toggleFullscreen();
+                updateDoc(doc(db, 'users', uid), { fullscreenTriggered: false });
+            }
+            if (data.imageScreenTriggered) {
+                window.showImageScreen(data.imageScreenTriggered);
+                updateDoc(doc(db, 'users', uid), { imageScreenTriggered: null });
+            }
         }
     });
 }
@@ -1679,5 +1732,96 @@ window.triggerJumpscare = async (uid) => {
         jumpscareTriggered: true
     });
 };
+
+window.removeUserFromLogs = async (uid) => {
+    if (!db) return;
+    try {
+        await deleteDoc(doc(db, 'users', uid));
+        alert('User removed from logs. They will need to re-enter their name.');
+    } catch (error) {
+        console.error('Error removing user:', error);
+        alert('Failed to remove user: ' + error.message);
+    }
+};
+
+window.toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+    } else {
+        document.exitFullscreen();
+    }
+};
+
+window.triggerFullscreen = async (uid) => {
+    if (!db) return;
+    await updateDoc(doc(db, 'users', uid), {
+        fullscreenTriggered: true
+    });
+};
+
+window.promptImageScreen = (uid) => {
+    const url = prompt('Enter image URL:');
+    if (url) {
+        window.triggerImageScreen(uid, url);
+    }
+};
+
+window.triggerImageScreen = async (uid, imageUrl) => {
+    if (!db) return;
+    await updateDoc(doc(db, 'users', uid), {
+        imageScreenTriggered: imageUrl
+    });
+};
+
+window.showImageScreen = (imageUrl) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'fixed inset-0 z-[2000] bg-black flex items-center justify-center';
+    overlay.innerHTML = `<img src="${imageUrl}" class="max-w-full max-h-full" referrerpolicy="no-referrer" />`;
+    document.body.appendChild(overlay);
+    
+    document.documentElement.requestFullscreen();
+
+    setTimeout(() => {
+        document.body.removeChild(overlay);
+        if (document.fullscreenElement) {
+            document.exitFullscreen();
+        }
+    }, 3000);
+};
+
+window.openUploadModal = () => {
+    document.getElementById('upload-game-modal').classList.remove('hidden');
+};
+
+document.getElementById('upload-cancel-btn').addEventListener('click', () => {
+    document.getElementById('upload-game-modal').classList.add('hidden');
+});
+
+document.getElementById('upload-submit-btn').addEventListener('click', async () => {
+    const title = document.getElementById('upload-title').value;
+    const thumbnail = document.getElementById('upload-thumbnail').value;
+    const htmlContent = document.getElementById('upload-html').value;
+
+    if (!title || !thumbnail || !htmlContent) {
+        alert('Please fill in all fields');
+        return;
+    }
+
+    try {
+        await addDoc(collection(db, 'games'), {
+            title,
+            thumbnail,
+            htmlContent,
+            uploaderUid: auth.currentUser.uid,
+            createdAt: serverTimestamp()
+        });
+        document.getElementById('upload-game-modal').classList.add('hidden');
+        alert('Game uploaded successfully!');
+        // Refresh games list if needed
+    } catch (error) {
+        console.error('Error uploading game:', error);
+        alert('Failed to upload game');
+    }
+});
 
 
