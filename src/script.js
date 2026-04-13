@@ -26,7 +26,7 @@ let auth = null;
 const mainContent = document.getElementById('main-content');
 
 // Fetch config and initialize Firebase
-fetch('../firebase-applet-config.json')
+fetch('/firebase-applet-config.json')
     .then(response => {
         console.log("Config fetch response:", response);
         return response.json();
