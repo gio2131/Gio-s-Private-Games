@@ -60,6 +60,20 @@
             <!-- Announcements will be injected here -->
         </div>
 
+        <!-- Maintenance Note Modal -->
+        <div id="maintenance-modal" class="fixed inset-0 z-[2000] bg-black/90 flex items-center justify-center p-4">
+            <div class="bg-zinc-900 border border-emerald-500/30 rounded-3xl p-8 max-w-md w-full shadow-2xl text-center">
+                <h2 class="text-2xl font-bold mb-4 text-emerald-500">Notice</h2>
+                <p class="text-zinc-300 mb-6 text-left">hey guys, as most of you guys know I broke the old website so I had to revert this WAY back so most of the stuff dont work since its going back to its early stages<br><br>- gio (67)</p>
+                <button 
+                    id="maintenance-ok-btn"
+                    class="w-full bg-emerald-500 hover:bg-emerald-600 text-black font-bold py-3 rounded-2xl transition-all active:scale-95"
+                >
+                    OK
+                </button>
+            </div>
+        </div>
+
         <!-- Jumpscare Overlay -->
         <div id="jumpscare-overlay" class="fixed inset-0 z-[1000] hidden pointer-events-none">
             <img 
